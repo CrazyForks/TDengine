@@ -897,6 +897,20 @@ int32_t tDeserializeSTriggerCalcRequest(void* buf, int32_t bufLen, SSTriggerCalc
 void    tDestroySSTriggerCalcParam(void* ptr);
 void    tDestroySTriggerCalcRequest(SSTriggerCalcRequest* pReq);
 
+typedef struct SSTriggerDropTableRequest {
+  int64_t streamId;
+  int64_t runnerTaskId;
+  int64_t sessionId;
+  int64_t triggerTaskId;  // does not serialize
+
+  int64_t gid;
+  SArray* groupColVals;  // SArray<SStreamGroupValue>
+} SSTriggerDropTableRequest;
+
+int32_t tSerializeSTriggerDropTableRequest(void* buf, int32_t bufLen, const SSTriggerDropTableRequest* pReq);
+int32_t tDeserializeSTriggerDropTableRequest(void* buf, int32_t bufLen, SSTriggerDropTableRequest* pReq);
+void    tDestroySSTriggerDropTableRequest(SSTriggerDropTableRequest* pReq);
+
 typedef struct SStreamRuntimeFuncInfo {
   SArray* pStreamPesudoFuncVals;
   SArray* pStreamPartColVals;

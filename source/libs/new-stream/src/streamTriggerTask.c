@@ -674,6 +674,10 @@ static int32_t stRealtimeGroupAddMetaDatas(SSTriggerRealtimeGroup *pGroup, SSDat
       continue;
     }
 
+    if (pTypes[i] == WAL_DELETE_TABLE) {
+      // todo(smj): mark the group to be deleted
+    }
+
     if (pSkeys[i] <= pGroup->oldThreshold && !pTask->ignoreDisorder) {
       // mark recalc time range for disordered data
       int64_t recalcSkey = pSkeys[i];
@@ -1789,7 +1793,7 @@ static int32_t stRealtimeGroupDoEventCheck(SSTriggerRealtimeGroup *pGroup) {
     bool    *ps = NULL, *pe = NULL;
     psCol = NULL;
     peCol = NULL;
-    
+
     for (int32_t r = startIdx; r < endIdx; r++) {
       if (IS_REALTIME_GROUP_OPEN_WINDOW(pGroup)) {
         TRINGBUF_FIRST(&pGroup->winBuf).range.ekey = pTsData[r];
@@ -2681,6 +2685,8 @@ static int32_t stRealtimeContextCheck(SSTriggerRealtimeContext *pContext) {
     pContext->status = STRIGGER_CONTEXT_CHECK_CONDITION;
   }
 
+  // todo(smj): try to delete marked groups if they are not running
+
   if (pTask->triggerType == STREAM_TRIGGER_PERIOD) {
     stTriggerTaskNextPeriodWindow(&pTask->interval, &pContext->periodWindow);
     pContext->status = STRIGGER_CONTEXT_IDLE;
@@ -3169,6 +3175,8 @@ static int32_t stRealtimeContextProcCalcRsp(SSTriggerRealtimeContext *pContext, 
     code = stRealtimeContextCheck(pContext);
     QUERY_CHECK_CODE(code, lino, _end);
   }
+
+  // todo(smj): check if the group is waiting to be deleted
 
 _end:
   if (code != TSDB_CODE_SUCCESS) {
