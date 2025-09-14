@@ -472,6 +472,9 @@ int32_t moveDataToAlignTaskMgr(SAlignTaskDSMgr* pStreamTaskMgr, SSDataBlock* pBl
 int32_t putStreamDataCache(void* pCache, int64_t groupId, TSKEY wstart, TSKEY wend, SSDataBlock* pBlock,
                            int32_t startIndex, int32_t endIndex) {
   int32_t code = TSDB_CODE_SUCCESS, lino = 0;
+  stDebug("putStreamDataCache groupId:%" PRId64 " wstart:%" PRId64 " wend:%" PRId64 " start:%d end:%d",
+          groupId, wstart, wend, startIndex, endIndex);
+  printDataBlock(pBlock, __func__, "stream_data_cache");
   if (pCache == NULL) {
     stError("putStreamDataCache param invalid, pCache is NULL");
     return TSDB_CODE_STREAM_INTERNAL_ERROR;

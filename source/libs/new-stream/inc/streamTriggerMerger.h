@@ -24,6 +24,7 @@ extern "C" {
 #include "stream.h"
 #include "tcommon.h"
 #include "tlosertree.h"
+#include "tobjpool.h"
 
 struct SStreamTriggerTask;
 
@@ -385,7 +386,7 @@ void stNewTimestampSorterReset(SSTriggerNewTimestampSorter *pSorter);
  * @param endIdx The end row index in the data block
  * @return int32_t Status code indicating success or error
  */
-int32_t stNewTimestampSorterSetData(SSTriggerNewTimestampSorter *pSorter, SArray *pMetas, SSDataBlock *pDataBlock,
+int32_t stNewTimestampSorterSetData(SSTriggerNewTimestampSorter *pSorter, SObjList *pMetas, SSDataBlock *pDataBlock,
                                     int32_t tsSlotId, int32_t startIdx, int32_t endIdx);
 
 /**
@@ -448,13 +449,15 @@ void stNewVtableMergerReset(SSTriggerNewVtableMerger *pMerger);
  * @brief Set the data for the vtable merger
  *
  * @param pMerger The SSTriggerNewVtableMerger instance responsible for merging
- * @param pMetas The metadatas of all original tables
+ * @param vtbUid The UID of the virtual table
+ * @param pTableUids List of original table UIDs involved in the merge
  * @param pTableColRefs Array of table column references, each containing original and virtual table column mappings
+ * @param pMetas The metadatas of all original tables
  * @param pSlices The hash map from original table uid to its data slice
  * @return int32_t
  */
-int32_t stNewVtableMergerSetData(SSTriggerNewVtableMerger *pMerger, SSHashObj *pMetas, SArray *pTableColRefs,
-                                 SSHashObj *pSlices);
+int32_t stNewVtableMergerSetData(SSTriggerNewVtableMerger *pMerger, int64_t vtbUid, SObjList *pTableUids, SArray *pTableColRefs,
+                                 SSHashObj *pMetas, SSHashObj *pSlices);
 
 /**
  * @brief Gets next data block from the vtable merger.

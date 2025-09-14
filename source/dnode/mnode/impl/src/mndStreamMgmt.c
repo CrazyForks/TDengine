@@ -4847,6 +4847,7 @@ void msmCheckSnodesState(SMnode *pMnode) {
 }
 
 bool msmCheckNeedHealthCheck(SMnode *pMnode) {
+  return false;
   int8_t active = atomic_load_8(&mStreamMgmt.active), state = atomic_load_8(&mStreamMgmt.state);
   if (0 == active || MND_STM_STATE_NORMAL != state) {
     mstTrace("ignore health check since active:%d state:%d", active, state);
