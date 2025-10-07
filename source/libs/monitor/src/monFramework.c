@@ -63,6 +63,7 @@ extern char* tsMonFwUri;
 #define MEM_FREE DNODE_TABLE":mem_free"
 #define MEM_TOTAL DNODE_TABLE":mem_total"
 #define MEM_CACHE_BUFFER DNODE_TABLE":mem_cache_buffer"
+#define MEM_ZGC_CACHE_BUFFER DNODE_TABLE":mem_zgc_free"
 #define DISK_ENGINE DNODE_TABLE":disk_engine"
 #define DISK_USED DNODE_TABLE":disk_used"
 #define DISK_TOTAL DNODE_TABLE":disk_total"
@@ -109,7 +110,7 @@ void monInitMonitorFW(){
   int32_t dnodes_label_count = 3;
   const char *dnodes_sample_labels[] = {"cluster_id", "dnode_id", "dnode_ep"};
   char *dnodes_gauges[] = {UPTIME, CPU_ENGINE, CPU_SYSTEM, CPU_CORE, MEM_ENGINE, MEM_FREE,
-                           MEM_TOTAL, MEM_CACHE_BUFFER, DISK_ENGINE, DISK_USED, DISK_TOTAL, NET_IN,
+                           MEM_TOTAL, MEM_CACHE_BUFFER, MEM_ZGC_CACHE_BUFFER, DISK_ENGINE, DISK_USED, DISK_TOTAL, NET_IN,
                            NET_OUT, IO_READ, IO_WRITE, IO_READ_DISK, IO_WRITE_DISK, /*ERRORS,*/
                            VNODES_NUM, MASTERS, HAS_MNODE, HAS_QNODE, HAS_SNODE,
                            DNODE_LOG_ERROR, DNODE_LOG_INFO, DNODE_LOG_DEBUG, DNODE_LOG_TRACE};
@@ -186,7 +187,7 @@ void monGenClusterInfoTable(SMonInfo *pMonitor){
     if (taosHashRemove(tsMonitor.metrics, metric_names[i], strlen(metric_names[i])) != 0) {
       uTrace("failed to remove metric %s", metric_names[i]);
     }
-  } 
+  }
 
   if(pBasicInfo->cluster_id == 0) {
     uError("failed to generate dnode info table since cluster_id is 0");
@@ -194,8 +195,8 @@ void monGenClusterInfoTable(SMonInfo *pMonitor){
   }
   if (pMonitor->mmInfo.cluster.first_ep_dnode_id == 0) return;
 
-  //cluster info  
-  taos_gauge_t *gauge = NULL;  
+  //cluster info
+  taos_gauge_t *gauge = NULL;
   int32_t label_count =1;
   const char *sample_labels1[] = {"cluster_id"};
 
@@ -216,7 +217,7 @@ void monGenClusterInfoTable(SMonInfo *pMonitor){
   const char *sample_label_values[] = {buf};
 
   taos_gauge_t **metric = NULL;
-  
+
   metric = taosHashGet(tsMonitor.metrics, MASTER_UPTIME, strlen(MASTER_UPTIME));
   if (metric != NULL) (void)taos_gauge_set(*metric, pInfo->master_uptime, sample_label_values);
 
@@ -261,21 +262,21 @@ void monGenClusterInfoTable(SMonInfo *pMonitor){
         dnode_alive++;
     }
   }
-    
+
   metric = taosHashGet(tsMonitor.metrics, DNODES_TOTAL, strlen(DNODES_TOTAL));
   if (metric != NULL) (void)taos_gauge_set(*metric, dnode_total, sample_label_values);
 
   metric = taosHashGet(tsMonitor.metrics, DNODES_ALIVE, strlen(DNODES_ALIVE));
   if (metric != NULL) (void)taos_gauge_set(*metric, dnode_alive, sample_label_values);
 
-  //mnodes number 
+  //mnodes number
   int32_t mnode_total = taosArrayGetSize(pInfo->mnodes);
   int32_t mnode_alive = 0;
 
   for (int32_t i = 0; i < taosArrayGetSize(pInfo->mnodes); ++i) {
 
     SMonMnodeDesc *pMnodeDesc = taosArrayGet(pInfo->mnodes, i);
-    
+
     bool dnodeIsOnline = false;
     for (int32_t i = 0; i < taosArrayGetSize(pInfo->dnodes); ++i) {
       SMonDnodeDesc *pDnodeDesc = taosArrayGet(pInfo->dnodes, i);
@@ -452,6 +453,9 @@ void monGenDnodeInfoTable(SMonInfo *pMonitor) {
   metric = taosHashGet(tsMonitor.metrics, MEM_CACHE_BUFFER, strlen(MEM_CACHE_BUFFER));
   if (metric != NULL) (void)taos_gauge_set(*metric, pSys->mem_cacheBuffer, sample_labels);
 
+  metric = taosHashGet(tsMonitor.metrics, MEM_ZGC_CACHE_BUFFER, strlen(MEM_ZGC_CACHE_BUFFER));
+  if (metric != NULL) (void)taos_gauge_set(*metric, pSys->mem_zgc_cacheBuffer, sample_labels);
+
   metric = taosHashGet(tsMonitor.metrics, DISK_ENGINE, strlen(DISK_ENGINE));
   if (metric != NULL) (void)taos_gauge_set(*metric, pSys->disk_engine, sample_labels);
 
@@ -557,7 +561,7 @@ void monGenDnodeStatusInfoTable(SMonInfo *pMonitor){
 
   char cluster_id[TSDB_CLUSTER_ID_LEN];
   snprintf(cluster_id, TSDB_CLUSTER_ID_LEN, "%"PRId64, pMonitor->dmInfo.basic.cluster_id);
- 
+
   //dnodes status
 
   SMonClusterInfo *pClusterInfo = &pMonitor->mmInfo.cluster;
@@ -685,7 +689,7 @@ void monGenMnodeRoleTable(SMonInfo *pMonitor){
   snprintf(buf, TSDB_CLUSTER_ID_LEN, "%" PRId64, pBasicInfo->cluster_id);
 
   taos_gauge_t **metric = NULL;
-  
+
   for (int32_t i = 0; i < taosArrayGetSize(pInfo->mnodes); ++i) {
 
     SMonMnodeDesc *pMnodeDesc = taosArrayGet(pInfo->mnodes, i);
@@ -705,7 +709,7 @@ void monGenMnodeRoleTable(SMonInfo *pMonitor){
         }
       }
     }
- 
+
     metric = taosHashGet(tsMonitor.metrics, MNODE_ROLE, strlen(MNODE_ROLE));
 
     if(dnodeIsOnline){
@@ -722,7 +726,7 @@ void monGenMnodeRoleTable(SMonInfo *pMonitor){
 void monGenVnodeRoleTable(SMonInfo *pMonitor){
   char *vnodes_role_gauges[] = {VNODE_ROLE};
   taos_gauge_t *gauge = NULL;
-  
+
   for(int32_t i = 0; i < 1; i++){
     if(taos_collector_registry_deregister_metric(vnodes_role_gauges[i]) != 0){
       uError("failed to delete metric %s", vnodes_role_gauges[i]);

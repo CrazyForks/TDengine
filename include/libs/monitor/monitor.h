@@ -61,6 +61,7 @@ typedef struct {
   int64_t mem_total;      // KB
   int64_t mem_free;       // KB
   int64_t mem_cacheBuffer; //KB
+  int64_t mem_zgc_cacheBuffer; //KB
   int64_t disk_engine;    // Byte
   int64_t disk_used;      // Byte
   int64_t disk_total;     // Byte

@@ -57,6 +57,7 @@ void *dmSetMgmtHandle(SArray *pArray, tmsg_t msgType, void *nodeMsgFp, bool need
 }
 
 void dmGetMonitorSystemInfo(SMonSysInfo *pInfo) {
+  dInfo("xxxzgc **** node_util -> in dmGetMonitorSystemInfo");
   int32_t code = 0;
   code = taosGetCpuUsage(&pInfo->cpu_system, &pInfo->cpu_engine);
   if (code != 0) {
@@ -71,6 +72,7 @@ void dmGetMonitorSystemInfo(SMonSysInfo *pInfo) {
     dError("failed to get proc memory since %s", tstrerror(code));
   }
   code = taosGetSysMemory(&pInfo->mem_system, &pInfo->mem_free, &pInfo->mem_cacheBuffer);
+  dInfo("xxxzgc ****22 node_util -> in dmGetMonitorSystemInfo -> mem_system:%lld, mem_free:%lld, mem_cacheBuffer:%lld", pInfo->mem_system, pInfo->mem_free, pInfo->mem_cacheBuffer);
   if (code != 0) {
     dError("failed to get sys memory since %s", tstrerror(code));
   }

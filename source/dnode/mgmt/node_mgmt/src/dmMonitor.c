@@ -48,6 +48,7 @@ static void dmGetDmMonitorInfo(SDnode *pDnode) {
   SMonDmInfo dmInfo = {0};
   dmGetMonitorBasicInfo(pDnode, &dmInfo.basic);
   dmGetMonitorDnodeInfo(pDnode, &dmInfo.dnode);
+  dInfo("xxxzgc **** in dmGetDmMonitorInfo");
   dmGetMonitorSystemInfo(&dmInfo.sys);
   monSetDmInfo(&dmInfo);
 }
@@ -125,6 +126,7 @@ void dmSendMonitorReport() {
   if (!tsEnableMonitor || tsMonitorFqdn[0] == 0 || tsMonitorPort == 0) return;
   dTrace("send monitor report to %s:%u", tsMonitorFqdn, tsMonitorPort);
 
+  dInfo("xxxzgc **** in dmSendMonitorReport");
   SDnode *pDnode = dmInstance();
   dmGetDmMonitorInfo(pDnode);
   dmGetMmMonitorInfo(pDnode);

@@ -195,7 +195,7 @@ static int32_t taosGetSysCpuInfo(SysCpuInfo *cpuInfo) {
     TAOS_SKIP_ERROR(taosCloseFile(&pFile));
     return terrno;
   }
-  
+
   TAOS_SKIP_ERROR(taosCloseFile(&pFile));
 #endif
 
@@ -243,7 +243,7 @@ static int32_t taosGetProcCpuInfo(ProcCpuInfo *cpuInfo) {
         terrno = TAOS_SYSTEM_ERROR(ERRNO);
         return terrno;
       }
-             
+
       break;
     }
   }
@@ -281,7 +281,7 @@ void taosGetSystemInfo() {
   TAOS_SKIP_ERROR(taosGetCpuUsage(NULL, NULL));
 #else
   taosGetProcIOnfos();
-  TAOS_SKIP_ERROR(taosGetCpuCores(&tsNumOfCores, false)); 
+  TAOS_SKIP_ERROR(taosGetCpuCores(&tsNumOfCores, false));
   TAOS_SKIP_ERROR(taosGetTotalMemory(&tsTotalMemoryKB));
   TAOS_SKIP_ERROR(taosGetCpuUsage(NULL, NULL));
   TAOS_SKIP_ERROR(taosGetCpuInstructions(&tsSSE42Supported, &tsAVXSupported, &tsAVX2Supported, &tsFMASupported, &tsAVX512Supported));
@@ -326,7 +326,7 @@ int32_t taosGetEmail(char *email, int32_t maxLen) {
   }
 
   TAOS_SKIP_ERROR(taosCloseFile(&pFile));
-  
+
   return 0;
 #endif
 }
@@ -570,7 +570,7 @@ static int32_t taosCntrGetCpuCores(float *numOfCores) {
     TAOS_SKIP_ERROR(taosCloseFile(&pFile));
     goto _sys;
   }
-  
+
   TAOS_SKIP_ERROR(taosCloseFile(&pFile));
   float quota = taosStr2Float(qline, NULL);
   if (quota < 0) {
@@ -580,13 +580,13 @@ static int32_t taosCntrGetCpuCores(float *numOfCores) {
   if (!(pFile = taosOpenFile(tsCpuPeriodFile, TD_FILE_READ | TD_FILE_STREAM))) {
     goto _sys;
   }
-  
+
   char pline[32] = {0};
   if (taosGetsFile(pFile, sizeof(pline), pline) <= 0) {
     TAOS_SKIP_ERROR(taosCloseFile(&pFile));
     goto _sys;
   }
-  
+
   TAOS_SKIP_ERROR(taosCloseFile(&pFile));
 
   float period = taosStr2Float(pline, NULL);
@@ -601,16 +601,16 @@ static int32_t taosCntrGetCpuCores(float *numOfCores) {
     return TAOS_SYSTEM_ERROR(ERRNO);
   }
   goto _end;
-  
+
 _sys:
   *numOfCores = sysconf(_SC_NPROCESSORS_ONLN);
   if(*numOfCores <= 0) {
     return TAOS_SYSTEM_ERROR(ERRNO);
   }
-  
+
 _end:
   return 0;
-  
+
 #endif
 }
 
@@ -787,7 +787,7 @@ int32_t taosGetProcMemory(int64_t *usedKB) {
   (void)sscanf(line, "%s %" PRId64, tmp, usedKB);
 
   TAOS_SKIP_ERROR(taosCloseFile(&pFile));
-  
+
   return 0;
 #endif
 }
@@ -834,12 +834,12 @@ int32_t taosGetSysAvailMemory(int64_t *availSize) {
   if (0 == line[0]) {
     return TSDB_CODE_UNSUPPORT_OS;
   }
-  
+
   char tmp[32];
   (void)sscanf(line, "%s %" PRId64, tmp, availSize);
 
   *availSize *= 1024;
-  
+
   (void)taosCloseFile(&pFile);
   return 0;
 #endif
@@ -953,7 +953,7 @@ int32_t taosGetSysMemory(int64_t *usedKB, int64_t *freeKB, int64_t *cacheBufferK
   //cache  Memory used by the page cache and slabs (Cached and SReclaimable in /proc/meminfo)
   *cacheBufferKB = buffer + cached + sReclaimable;
   *usedKB = total - *freeKB - *cacheBufferKB;
-  
+  dInfo("xxxzgc **** in taosGetSysMemory, total:%lld, free:%lld, cacheBuffer:%lld", total, *freeKB, *cacheBufferKB);
   TAOS_SKIP_ERROR(taosCloseFile(&pFile));
   return 0;
 #endif
@@ -1013,7 +1013,7 @@ int32_t taosGetDiskSize(char *dataDir, SDiskSize *diskSize) {
     diskSize->total = info.f_blocks * info.f_frsize;
     diskSize->avail = info.f_bavail * info.f_frsize;
     diskSize->used = diskSize->total - diskSize->avail;
-    
+
     return 0;
   }
 #endif
@@ -1358,9 +1358,9 @@ int64_t taosGetOsUptime() {
     terrno = TAOS_SYSTEM_ERROR(ERRNO);
     return terrno;
   }
-  
+
   return (int64_t)info.uptime * 1000;
-  
+
 #endif
   return 0;
 }
