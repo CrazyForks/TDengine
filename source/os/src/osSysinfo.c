@@ -953,7 +953,7 @@ int32_t taosGetSysMemory(int64_t *usedKB, int64_t *freeKB, int64_t *cacheBufferK
   //cache  Memory used by the page cache and slabs (Cached and SReclaimable in /proc/meminfo)
   *cacheBufferKB = buffer + cached + sReclaimable;
   *usedKB = total - *freeKB - *cacheBufferKB;
-  printf("xxxzgc **** in taosGetSysMemory, total:%lld, free:%lld, cacheBuffer:%lld \n", total, *freeKB, *cacheBufferKB);
+  printf("xxxzgc **** in taosGetSysMemory, total:%ld, free:%ld, cacheBuffer:%ld \n", total, *freeKB, *cacheBufferKB);
   TAOS_SKIP_ERROR(taosCloseFile(&pFile));
   return 0;
 #endif
