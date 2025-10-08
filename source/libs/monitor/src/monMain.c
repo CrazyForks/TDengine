@@ -657,7 +657,7 @@ void monGenAndSendReport() {
   SMonInfo *pMonitor = monCreateMonitorInfo();
   if (pMonitor == NULL) return;
 
-  dInfo("xxxzgc **** in monGenAndSendReport: tsMonitorForceV2: %d", tsMonitorForceV2);
+  uInfo("xxxzgc **** in monGenAndSendReport: tsMonitorForceV2: %d", tsMonitorForceV2);
   if (!tsMonitorForceV2) {
     monGenBasicJson(pMonitor);
     monGenClusterJson(pMonitor);
