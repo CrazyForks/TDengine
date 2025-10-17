@@ -1478,6 +1478,12 @@ int32_t streamAddBlockIntoDispatchMsg(const SSDataBlock* pBlock, SStreamDispatch
   }
 
   pReq->totalLen += dataStrLen;
+  if (pReq->ingestTime == 0) {
+    pReq->ingestTime = pBlock->info.ingestTime;
+  } else if (pReq->ingestTime > pBlock->info.ingestTime) {
+    pReq->ingestTime = pBlock->info.ingestTime;
+  }
+  
   return 0;
 }
 

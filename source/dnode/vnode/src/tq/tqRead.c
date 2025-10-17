@@ -377,6 +377,7 @@ int32_t tqReaderSeek(STqReader* pReader, int64_t ver, const char* id) {
 
 int32_t extractMsgFromWal(SWalReader* pReader, void** pItem, int64_t maxVer, const char* id) {
   int32_t code = 0;
+  int64_t now = taosGetTimestampMs();
 
   while (1) {
     TAOS_CHECK_RETURN(walNextValidMsg(pReader));
@@ -400,8 +401,11 @@ int32_t extractMsgFromWal(SWalReader* pReader, void** pItem, int64_t maxVer, con
         return terrno;
       }
 
+      tqInfo("s-task:%s submit msg extract from WAL, len:%d, *ver*:%" PRId64 ", latency:%.2fms", id, len, ver,
+             (now - pCont->ingestTs / 1000.0));
+
       (void)memcpy(data, pBody, len);
-      SPackedData data1 = (SPackedData){.ver = ver, .msgLen = len, .msgStr = data};
+      SPackedData data1 = (SPackedData){.ver = ver, .msgLen = len, .msgStr = data, .ingestTime = pCont->ingestTs/1000};
 
       code = streamDataSubmitNew(&data1, STREAM_INPUT__DATA_SUBMIT, (SStreamDataSubmit**)pItem);
       if (code != 0) {

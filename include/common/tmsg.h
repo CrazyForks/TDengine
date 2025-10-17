@@ -4884,6 +4884,7 @@ typedef struct {
       void*   msgStr;
       int32_t msgLen;
       int64_t ver;
+      int64_t ingestTime;
     };
     void* pDataBlock;
   };

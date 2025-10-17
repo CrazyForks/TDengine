@@ -362,6 +362,7 @@ int32_t tEncodeStreamDispatchReq(SEncoder* pEncoder, const SStreamDispatchReq* p
   TAOS_CHECK_EXIT(tEncodeI32(pEncoder, pReq->upstreamRelTaskId));
   TAOS_CHECK_EXIT(tEncodeI32(pEncoder, pReq->blockNum));
   TAOS_CHECK_EXIT(tEncodeI64(pEncoder, pReq->totalLen));
+  TAOS_CHECK_EXIT(tEncodeI64(pEncoder, pReq->ingestTime));
 
   if (taosArrayGetSize(pReq->data) != pReq->blockNum || taosArrayGetSize(pReq->dataLen) != pReq->blockNum) {
     uError("invalid dispatch req msg");
@@ -405,6 +406,7 @@ int32_t tDecodeStreamDispatchReq(SDecoder* pDecoder, SStreamDispatchReq* pReq) {
   TAOS_CHECK_EXIT(tDecodeI32(pDecoder, &pReq->upstreamRelTaskId));
   TAOS_CHECK_EXIT(tDecodeI32(pDecoder, &pReq->blockNum));
   TAOS_CHECK_EXIT(tDecodeI64(pDecoder, &pReq->totalLen));
+  TAOS_CHECK_EXIT(tDecodeI64(pDecoder, &pReq->ingestTime));
 
   if ((pReq->data = taosArrayInit(pReq->blockNum, sizeof(void*))) == NULL) {
     TAOS_CHECK_EXIT(terrno);

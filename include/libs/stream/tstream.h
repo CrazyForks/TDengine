@@ -167,12 +167,14 @@ typedef int32_t FTaskExpand(SStreamTask* pTask);
 typedef struct {
   int8_t      type;
   int64_t     ver;
+  int64_t     ingestTime;
   SPackedData submit;
 } SStreamDataSubmit;
 
 typedef struct {
   int8_t  type;
   int64_t ver;
+  int64_t ingestTime;
   SArray* submits;  // SArray<SPackedSubmit>
 } SStreamMergedSubmit;
 

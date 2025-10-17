@@ -142,6 +142,7 @@ struct SStreamDispatchReq {
   int32_t upstreamRelTaskId;
   int32_t blockNum;
   int64_t totalLen;
+  int64_t ingestTime;
   SArray* dataLen;  // SArray<int32_t>
   SArray* data;     // SArray<SRetrieveTableRsp*>
 };

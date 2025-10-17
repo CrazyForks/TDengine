@@ -14,6 +14,8 @@
  */
 
 #include "streamInt.h"
+#include "tcommon.h"
+#include "tstream.h"
 
 // maximum allowed processed block batches. One block may include several submit blocks
 #define MAX_STREAM_EXEC_BATCH_NUM         32
@@ -85,7 +87,7 @@ static int32_t doDumpResult(SStreamTask* pTask, SStreamQueueItem* pItem, SArray*
     return TSDB_CODE_OUT_OF_MEMORY;
   }
 
-  stDebug("s-task:%s dump stream result data blocks, num:%d, size:%.2fMiB", pTask->id.idStr, numOfBlocks,
+  stInfo("s-task:%s dump stream result data blocks, num:%d, size:%.2fMiB", pTask->id.idStr, numOfBlocks,
           SIZE_IN_MiB(size));
 
   code = doOutputResultBlockImpl(pTask, pStreamBlocks);
@@ -215,6 +217,12 @@ int32_t streamTaskExecImpl(SStreamTask* pTask, SStreamQueueItem* pItem, int64_t*
     }
 
     SSDataBlock block = {.info.childId = pTask->info.selfChildId};
+    if (pItem->type == STREAM_INPUT__DATA_SUBMIT) {
+      output->info.ingestTime = ((SStreamDataSubmit*)pItem)->ingestTime;
+    } else if (pItem->type == STREAM_INPUT__MERGED_SUBMIT) {
+      output->info.ingestTime = ((SStreamMergedSubmit*)pItem)->ingestTime;
+    }
+
     code = assignOneDataBlock(&block, output);
     if (code) {
       stError("s-task:%s failed to build result block due to out of memory", pTask->id.idStr);
@@ -556,8 +564,8 @@ static int32_t doSetStreamInputBlock(SStreamTask* pTask, const void* pInput, int
   } else if (pItem->type == STREAM_INPUT__DATA_SUBMIT) {
     const SStreamDataSubmit* pSubmit = (const SStreamDataSubmit*)pInput;
     code = qSetMultiStreamInput(pExecutor, &pSubmit->submit, 1, STREAM_INPUT__DATA_SUBMIT);
-    stDebug("s-task:%s set submit blocks as source block completed, %p %p len:%d ver:%" PRId64, id, pSubmit,
-            pSubmit->submit.msgStr, pSubmit->submit.msgLen, pSubmit->submit.ver);
+    stInfo("s-task:%s set submit blocks as source block completed, %p %p len:%d ver:%" PRId64" ingestTime:%"PRId64, id, pSubmit,
+            pSubmit->submit.msgStr, pSubmit->submit.msgLen, pSubmit->submit.ver, pSubmit->submit.ingestTime);
     if ((*pVer) > pSubmit->submit.ver) {
       stError("s-task:%s invalid recorded ver:%" PRId64 " greater than new block ver:%" PRId64 ", not update", id,
               *pVer, pSubmit->submit.ver);
@@ -577,8 +585,8 @@ static int32_t doSetStreamInputBlock(SStreamTask* pTask, const void* pInput, int
 
     SArray* pBlockList = pMerged->submits;
     int32_t numOfBlocks = taosArrayGetSize(pBlockList);
-    stDebug("s-task:%s %p set (merged) submit blocks as a batch, numOfBlocks:%d, ver:%" PRId64, id, pTask, numOfBlocks,
-            pMerged->ver);
+    stDebug("s-task:%s %p set (merged) submit blocks as a batch, numOfBlocks:%d, ver:%" PRId64" ingestTime:%"PRId64, id, pTask, numOfBlocks,
+            pMerged->ver, pMerged->ingestTime);
     code = qSetMultiStreamInput(pExecutor, pBlockList->pData, numOfBlocks, STREAM_INPUT__MERGED_SUBMIT);
 
     if ((*pVer) > pMerged->ver) {
@@ -719,9 +727,18 @@ static int32_t doStreamTaskExecImpl(SStreamTask* pTask, SStreamQueueItem* pBlock
   }
 
   if (ver != pInfo->processedVer) {
-    stDebug("s-task:%s update processedVer(unsaved) from %" PRId64 " to %" PRId64 " nextProcessVer:%" PRId64
-            " ckpt:%" PRId64,
-            id, pInfo->processedVer, ver, pInfo->nextProcessVer, pInfo->checkpointVer);
+    stInfo("s-task:%s update processedVer(unsaved) from %" PRId64 " to %" PRId64 " nextProcessVer:%" PRId64
+           " ckpt:%" PRId64,
+           id, pInfo->processedVer, ver, pInfo->nextProcessVer, pInfo->checkpointVer);
+    if (pBlock->type == STREAM_INPUT__DATA_SUBMIT || pBlock->type == STREAM_INPUT__MERGED_SUBMIT) {
+      int64_t now = taosGetTimestampMs();
+      int64_t ingestTime = ((SStreamDataSubmit*)pBlock)->submit.ingestTime;
+
+      stInfo("s-task:%s processed submit block completed, ver:%" PRId64 ", ingestTime:%" PRId64 " latency:%" PRId64
+             "ms",
+             id, ((SStreamDataSubmit*)pBlock)->submit.ver, ingestTime, now - ingestTime);
+    }
+
     pInfo->processedVer = ver;
   }
 

@@ -1345,6 +1345,7 @@ void rebuildAndSendMultiResBlock(SStreamTask* pTask, const SArray* pBlocks, SVno
   int64_t     suid = pTask->outputInfo.tbSink.stbUid;
   STSchema*   pTSchema = pTask->outputInfo.tbSink.pTSchema;
   char*       stbFullName = pTask->outputInfo.tbSink.stbFullName;
+  int64_t     now = taosGetTimestampMs();
 
   SHashObj* pTableIndexMap =
       taosHashInit(numOfBlocks, taosGetDefaultHashFunction(TSDB_DATA_TYPE_BIGINT), false, HASH_NO_LOCK);
@@ -1430,6 +1431,10 @@ void rebuildAndSendMultiResBlock(SStreamTask* pTask, const SArray* pBlocks, SVno
     }
 
     pTask->execInfo.sink.numOfRows += pDataBlock->info.rows;
+    int64_t t = pDataBlock->info.ingestTime;
+    tqInfo("vgId:%d, s-task:%s processed %d rows from %dth resBlock for dst table groupId:%" PRId64
+           " ingestTime:% " PRId64 " latency: %" PRId64 "ms",
+           vgId, id, (int32_t)pDataBlock->info.rows, i + 1, groupId, t, now - t);
   }
 
   taosHashCleanup(pTableIndexMap);
@@ -1452,6 +1457,7 @@ int32_t handleResultBlockMsg(SStreamTask* pTask, SSDataBlock* pDataBlock, int32_
   const char* id = pTask->id.idStr;
   int32_t     vgId = TD_VID(pVnode);
   char*       stbFullName = pTask->outputInfo.tbSink.stbFullName;
+  int64_t     now = taosGetTimestampMs();
 
   pTask->execInfo.sink.numOfBlocks += 1;
 
@@ -1491,6 +1497,9 @@ int32_t handleResultBlockMsg(SStreamTask* pTask, SSDataBlock* pDataBlock, int32_
   code = doBuildAndSendSubmitMsg(pVnode, pTask, &submitReq, 1);
   if (code) {  // failed and continue
     tqDebug("vgId:%d, s-task:%s submit msg failed, code:%s data lost", vgId, id, tstrerror(code));
+  } else {
+    tqInfo("vgId:%d, s-task:%s write %d rows into dst table completed, ingestTime:%" PRId64 " latency:%" PRId64 "ms",
+           vgId, id, (int32_t)pDataBlock->info.rows, pDataBlock->info.ingestTime, (now - pDataBlock->info.ingestTime));
   }
 
   return code;

@@ -232,6 +232,7 @@ typedef struct SDataBlockInfo {
   int32_t     rowSize;
   uint32_t    capacity;
   int64_t     rows;  // todo hide this attribute
+  int64_t     ingestTime;  // ingest time in microseconds
   SBlockID    id;
   int16_t     hasVarCol;
   int16_t     dataLoad;  // denote if the data is loaded or not

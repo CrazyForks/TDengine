@@ -44,6 +44,11 @@ static int32_t streamMergeSubmit(SStreamMergedSubmit* pMerged, SStreamDataSubmit
   if (pSubmit->ver > pMerged->ver) {
     pMerged->ver = pSubmit->ver;
   }
+
+  if (pSubmit->ingestTime < pMerged->ingestTime || pMerged->ingestTime == 0) {
+    pMerged->ingestTime = pSubmit->ingestTime;
+  }
+  
   return 0;
 }
 
@@ -111,6 +116,7 @@ int32_t createStreamBlockFromDispatchMsg(const SStreamDispatchReq* pReq, int32_t
     pDataBlock->info.type = pRetrieve->streamBlockType;
     pDataBlock->info.childId = pReq->upstreamChildId;
     pDataBlock->info.id.uid = be64toh(pRetrieve->useconds);
+    pDataBlock->info.ingestTime = pReq->ingestTime;
   }
 
   pData->blocks = pArray;
@@ -203,6 +209,7 @@ int32_t streamDataSubmitNew(SPackedData* pData, int32_t type, SStreamDataSubmit*
   }
 
   pDataSubmit->ver = pData->ver;
+  pDataSubmit->ingestTime = pData->ingestTime;
   pDataSubmit->submit = *pData;
   pDataSubmit->type = type;
 
