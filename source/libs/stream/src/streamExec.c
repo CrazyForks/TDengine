@@ -221,6 +221,9 @@ int32_t streamTaskExecImpl(SStreamTask* pTask, SStreamQueueItem* pItem, int64_t*
       output->info.ingestTime = ((SStreamDataSubmit*)pItem)->ingestTime;
     } else if (pItem->type == STREAM_INPUT__MERGED_SUBMIT) {
       output->info.ingestTime = ((SStreamMergedSubmit*)pItem)->ingestTime;
+    } else if (pItem->type == STREAM_INPUT__DATA_BLOCK) {
+      SSDataBlock* p = taosArrayGet(((SStreamDataBlock*)pItem)->blocks, 0);  // just to make sure data is accessed
+      output->info.ingestTime = p->info.ingestTime;
     }
 
     code = assignOneDataBlock(&block, output);
