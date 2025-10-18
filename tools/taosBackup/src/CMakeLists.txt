@@ -1,5 +1,9 @@
 # CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
+MESSAGE("")
+MESSAGE("********** Start build taosBackup **********")
+MESSAGE("")
+
 #
 # ------------- buildinfo --------------
 #
@@ -49,7 +53,8 @@ IF(GIT_FOUND)
         COMMAND git log -1 --format=%H
         WORKING_DIRECTORY ${TD_COMMUNITY_DIR}
         OUTPUT_VARIABLE GIT_COMMIT_ID
-        )    
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )    
     # show
     MESSAGE(STATUS "taosBackup commit id: ${GIT_COMMIT_ID}")
     # define
@@ -87,3 +92,6 @@ ADD_EXECUTABLE(taosBackup taosBackup.c)
 # link libs
 TARGET_LINK_LIBRARIES(taosBackup PRIVATE taos)
 
+MESSAGE("")
+MESSAGE("********** End build taosBackup ! **********")
+MESSAGE("")
