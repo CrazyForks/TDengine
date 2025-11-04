@@ -98,11 +98,7 @@ SSdbRow *mndStreamActionDecode(SSdbRaw *pRaw) {
 
   SDB_GET_BINARY(pRaw, dataPos, buf, tlen, _over);
 
-  SDecoder decoder;
-  tDecoderInit(&decoder, buf, tlen + 1);
-  code = tDecodeSStreamObj(&decoder, pStream, sver);
-  tDecoderClear(&decoder);
-
+  code = jsonToMndStreamObj(tjsonParse((char *)buf), pStream);
   if (code < 0) {
     tFreeStreamObj(pStream);
   }
@@ -874,7 +870,8 @@ static int32_t mndProcessCreateStreamReq(SRpcMsg *pReq) {
   pCreate = taosMemoryCalloc(1, sizeof(SCMCreateStreamReq));
   TSDB_CHECK_NULL(pCreate, code, lino, _OVER, terrno);
   
-  code = tDeserializeSCMCreateStreamReq(pReq->pCont, pReq->contLen, pCreate);
+  code = jsonToSCMCreateStreamReq(
+    tjsonParse((const char*)pReq->pCont), pCreate);
   TSDB_CHECK_CODE(code, lino, _OVER);
 
   streamId = pCreate->streamId;

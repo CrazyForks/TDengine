@@ -16407,16 +16407,8 @@ static int32_t buildCreateTSMAReqBuildCreateDropStreamReq(STranslateContext* pCx
   pCxt->currLevel = currLevel;
 
   createreq.tsmaId = pReq->uid;
-  pReq->streamReqLen = tSerializeSCMCreateStreamReq(NULL, 0, &createreq);
-  pReq->createStreamReq = taosMemoryCalloc(1, pReq->streamReqLen);
-  if (!pReq->createStreamReq) {
-    PAR_ERR_JRET(terrno);
-  }
-  if (pReq->streamReqLen != tSerializeSCMCreateStreamReq(pReq->createStreamReq,
-                                                         pReq->streamReqLen,
-                                                         &createreq)) {
-    PAR_ERR_JRET(TSDB_CODE_INVALID_MSG);
-  }
+  PAR_ERR_JRET(scmCreateStreamReqToJson(
+    &createreq, false, &pReq->createStreamReq, &pReq->streamReqLen));
 
   dropreq.name = taosStrdup(createreq.name);
   dropreq.igNotExists = false;

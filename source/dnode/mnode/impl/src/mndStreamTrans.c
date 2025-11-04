@@ -54,42 +54,25 @@ int32_t mndStreamCreateTrans(SMnode *pMnode, SStreamObj *pStream, SRpcMsg *pReq,
 SSdbRaw *mndStreamActionEncode(SStreamObj *pStream) {
   int32_t code = 0;
   int32_t lino = 0;
-  void   *buf = NULL;
   int64_t streamId = pStream->pCreate->streamId;
+  char   *json = NULL;
+  int32_t jsonLen = 0;
 
-  SEncoder encoder;
-  tEncoderInit(&encoder, NULL, 0);
-  if ((code = tEncodeSStreamObj(&encoder, pStream)) < 0) {
-    tEncoderClear(&encoder);
-    TSDB_CHECK_CODE(code, lino, _over);
-  }
+  code = mndStreamObjToJson(pStream, false, &json, &jsonLen);
+  TSDB_CHECK_CODE(code, lino, _over);
 
-  int32_t tlen = encoder.pos;
-  tEncoderClear(&encoder);
-
-  int32_t  size = sizeof(int32_t) + tlen + MND_STREAM_RESERVE_SIZE;
+  int32_t  size = sizeof(int32_t) + jsonLen + MND_STREAM_RESERVE_SIZE;
   SSdbRaw *pRaw = sdbAllocRaw(SDB_STREAM, MND_STREAM_VER_NUMBER, size);
   TSDB_CHECK_NULL(pRaw, code, lino, _over, terrno);
 
-  buf = taosMemoryMalloc(tlen);
-  TSDB_CHECK_NULL(buf, code, lino, _over, terrno);
-
-  tEncoderInit(&encoder, buf, tlen);
-  if ((code = tEncodeSStreamObj(&encoder, pStream)) < 0) {
-    tEncoderClear(&encoder);
-    TSDB_CHECK_CODE(code, lino, _over);
-  }
-
-  tEncoderClear(&encoder);
-
   int32_t dataPos = 0;
-  SDB_SET_INT32(pRaw, dataPos, tlen, _over);
-  SDB_SET_BINARY(pRaw, dataPos, buf, tlen, _over);
+  SDB_SET_INT32(pRaw, dataPos, jsonLen, _over);
+  SDB_SET_BINARY(pRaw, dataPos, json, jsonLen, _over);
   SDB_SET_DATALEN(pRaw, dataPos, _over);
 
 _over:
 
-  taosMemoryFreeClear(buf);
+  taosMemoryFreeClear(json);
   if (code != TSDB_CODE_SUCCESS) {
     mstsError("failed to encode stream %s to raw:%p at line:%d since %s", pStream->pCreate->name, pRaw, lino, tstrerror(code));
     sdbFreeRaw(pRaw);

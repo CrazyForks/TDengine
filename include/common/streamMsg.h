@@ -738,6 +738,11 @@ int32_t tCloneStreamCreateDeployPointers(SCMCreateStreamReq *pSrc, SCMCreateStre
 int32_t tSerializeSCMCreateStreamReqImpl(SEncoder* pEncoder, const SCMCreateStreamReq* pReq);
 int32_t tDeserializeSCMCreateStreamReqImpl(SDecoder* pDecoder, SCMCreateStreamReq* pReq);
 
+int32_t scmCreateStreamReqToJsonImpl(const void* pObj, void* pJson);
+int32_t scmCreateStreamReqToJson(
+  const SCMCreateStreamReq* pReq, bool format, char** ppStr, int32_t* pStrLen);
+int32_t jsonToSCMCreateStreamReq(const void* pJson, void* pReq);
+
 typedef enum ESTriggerPullType {
   STRIGGER_PULL_SET_TABLE,
   STRIGGER_PULL_LAST_TS,

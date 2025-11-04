@@ -40,7 +40,7 @@ int32_t tDecodeSStreamObj(SDecoder *pDecoder, SStreamObj *pObj, int32_t sver) {
 
   TAOS_CHECK_RETURN(tDecodeCStrTo(pDecoder, pObj->name));
   pObj->pCreate = taosMemoryCalloc(1, sizeof(*pObj->pCreate));
-  if (NULL == pObj) {
+  if (NULL == pObj->pCreate) {
     TAOS_CHECK_EXIT(terrno);
   }
   

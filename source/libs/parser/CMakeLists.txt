@@ -55,7 +55,7 @@ target_include_directories(
 
 target_link_libraries(
         parser
-        PRIVATE os util nodes catalog function scalar planner geometry transport qcom decimal
+        PRIVATE os util nodes catalog function scalar planner geometry transport qcom decimal new-stream
 )
 
 if(${BUILD_TEST})

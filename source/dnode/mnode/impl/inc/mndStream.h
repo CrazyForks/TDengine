@@ -18,6 +18,7 @@
 #include "stream.h"
 #include "mndInt.h"
 #include "mndTrans.h"
+#include "mndJson.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,7 +97,7 @@ static const char* gMndStreamState[] = {"X", "W", "N"};
 #define STREAM_ACT_RECALC     (1 << 4)
 
 #define MND_STREAM_RESERVE_SIZE      64
-#define MND_STREAM_VER_NUMBER        7
+#define MND_STREAM_VER_NUMBER        8
 #define MND_STREAM_TRIGGER_NAME_SIZE 20
 #define MND_STREAM_DEFAULT_NUM       100
 #define MND_STREAM_DEFAULT_TASK_NUM  200
