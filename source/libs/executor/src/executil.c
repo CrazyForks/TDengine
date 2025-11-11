@@ -2083,6 +2083,7 @@ int32_t getTableList(void* pVnode, SScanPhysiNode* pScanNode, SNode* pTagCond, S
   size_t  numOfTables = 0;
   bool    listAdded = false;
   char*   pTagCondStr = NULL;
+  char*   digestStr = taosMemoryCalloc(1, 64);
 
   pListInfo->idInfo.suid = pScanNode->suid;
   pListInfo->idInfo.tableType = pScanNode->tableType;
@@ -2241,8 +2242,9 @@ int32_t getTableList(void* pVnode, SScanPhysiNode* pScanNode, SNode* pTagCond, S
     }
     if (tsStableTagFilterCache && pStreamInfo != NULL &&
       canCacheTagCondFilter) {
-      qInfo("suid:%" PRIu64 ", %s add uid list to stableTagFilterCache, key:%s, keyLen:%d, condition:%s, uidListSize:%d", 
-        pScanNode->suid, idstr, pTagCondKey, tagCondKeyLen, pTagCondStr, (int32_t)taosArrayGetSize(pUidList));
+      taosHexEncode(contextStable.digest, digestStr, 16, 64);
+      qInfo("suid:%" PRIu64 ", %s add uid list to stableTagFilterCache, key:%s, condition:%s, uidListSize:%d", 
+        pScanNode->suid, idstr, digestStr, pTagCondStr, (int32_t)taosArrayGetSize(pUidList));
       code = pStorageAPI->metaFn.putStableCachedTableList(
         pVnode, pScanNode->suid, pTagCondKey, tagCondKeyLen,
         contextStable.digest, tListLen(contextStable.digest),
@@ -2272,6 +2274,7 @@ _end:
   qDebug("table list with %d uids built", (int32_t)taosArrayGetSize(pListInfo->pTableList));
 
 _error:
+  taosMemoryFree(digestStr);
   taosArrayDestroy(pUidList);
   taosArrayDestroy(pTagColIds);
   taosMemFreeClear(pTagCondKey);
