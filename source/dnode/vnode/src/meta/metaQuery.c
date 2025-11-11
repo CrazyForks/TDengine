@@ -1613,7 +1613,7 @@ int32_t metaGetTableTags(void *pVnode, uint64_t suid, SArray *pUidTagInfo) {
       metaCloseCtbCursor(pCur);
       return terrno;
     }
-    metaInfo("uid %" PRIu64 " added to uidTagList", uid);
+    metaInfo("uid %" PRIu64 " added to uidTagList, idx:%d", uid, (int32_t)taosArrayGetSize(pUidTagInfo) - 1);
   }
   metaCloseCtbCursor(pCur);
   return TSDB_CODE_SUCCESS;
