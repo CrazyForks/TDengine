@@ -1805,21 +1805,21 @@ static int32_t doSetQualifiedUid(STableListInfo* pListInfo, SArray* pUidList, co
       qDebug("tagfilter get uid:%" PRId64 ", res:%d", uid, pResultList[i]);
 
       info.uid = uid;
-      //qInfo("doSetQualifiedUid row:%d added to pTableList", i);
+      qInfo("doSetQualifiedUid row:%d added to pTableList", i);
       void* p = taosArrayPush(pListInfo->pTableList, &info);
       if (p == NULL) {
         return terrno;
       }
 
       if (addUid) {
-        //qInfo("doSetQualifiedUid row:%d added to pUidList", i);
+        qInfo("doSetQualifiedUid row:%d added to pUidList", i);
         void* tmp = taosArrayPush(pUidList, &uid);
         if (tmp == NULL) {
           return terrno;
         }
       }
     } else {
-      //qInfo("doSetQualifiedUid row:%d failed", i);
+      qInfo("doSetQualifiedUid row:%d failed", i);
     }
   }
 
@@ -1924,7 +1924,7 @@ int32_t doFilterByTagCond(STableListInfo* pListInfo, SArray* pUidList, SNode* pT
     }
   }
 
-  qDebug("final pUidTagList size:%d", (int32_t)taosArrayGetSize(pUidTagList));
+  qInfo("final pUidTagList size:%d", (int32_t)taosArrayGetSize(pUidTagList));
 
   int32_t numOfTables = taosArrayGetSize(pUidTagList);
   if (numOfTables == 0) {
