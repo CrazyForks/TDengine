@@ -4,6 +4,8 @@ title: 支持平台列表
 description: "TDengine TSDB 服务端、客户端和连接器支持的平台列表"
 ---
 
+import PlatformSupported from "./05-connector/_platform_supported.mdx";
+
 3.0.7.1 之后的社区版所支持的操作系统范围，可参考本文档，如果使用国产操作系统，请使用企业版本，或者使用 Docker 方式安装。
 
 ## TDengine TSDB 服务端支持的平台列表
@@ -33,31 +35,8 @@ description: "TDengine TSDB 服务端、客户端和连接器支持的平台列�
 
 ## TDengine TSDB 客户端和连接器支持的平台列表
 
-目前 TDengine TSDB 的连接器可支持的平台广泛，目前包括：X64/X86/ARM64/ARM32/MIPS/LoongArch64(或 Loong64) 等硬件平台，以及 Linux/Win64/Win32/macOS 等开发环境。
-
-对照矩阵如下：
-
-注：● 表示官方测试验证通过，○ 表示非官方测试验证通过，-- 表示未经验证。
-
-| **CPU**     | **X64 64bit** | **X64 64bit** | **X64 64bit** | **ARM64** | **ARM64** |
-| ----------- | ------------- | ------------- | ------------- | --------- | --------- |
-| **OS**      | **Linux**     | **Win64**     | **macOS**     | **Linux** | **macOS** |
-| **C/C++**   | ●             | ●             | ●             | ●         | ●         |
-| **JDBC**    | ●             | ●             | ●             | ●         | ●         |
-| **Python**  | ●             | ●             | ●             | ●         | ●         |
-| **Go**      | ●             | ●             | ●             | ●         | ●         |
-| **NodeJs**  | ●             | ●             | ●             | ●         | ●         |
-| **C#**      | ●             | ●             | ○             | ●         | ○         |
-| **Rust**    | ●             | ●             | ●             | ○         | ●         |
-| **RESTful** | ●             | ●             | ●             | ●         | ●         |
-
+<PlatformSupported /> 
 
 ## TDengine TSDB 支持的网络环境
 
-目前 TSDB 通讯方式 支持 ipv4 和ipv6, 其中ipv6 内容参见 (../08-operation/13-ipv6.md)
-
-
-
-
-
-
+TDengine 支持 IPv4 和 IPv6 两种通信方式, 其中 IPv6 内容参见 [IPv6 配置](../08-operation/13-network.md)

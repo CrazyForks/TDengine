@@ -343,6 +343,7 @@ static SKeyword keywordTable[] = {
     {"VNODE",                TK_VNODE},
     {"VNODES",               TK_VNODES},
     {"VTABLE",               TK_VTABLE},
+    {"WAL",                  TK_WAL},
     {"WAL_FSYNC_PERIOD",     TK_WAL_FSYNC_PERIOD},
     {"WAL_LEVEL",            TK_WAL_LEVEL},
     {"WAL_RETENTION_PERIOD", TK_WAL_RETENTION_PERIOD},
@@ -408,10 +409,10 @@ static SKeyword keywordTable[] = {
     {"VTABLES",              TK_VTABLES},
     {"META_ONLY",            TK_META_ONLY},
     {"_IMPROWTS",            TK_IMPROWTS},
-    {"_IMPMASK",             TK_IMPMASK},
+    {"_IMPMARK",             TK_IMPMARK},
     {"SCAN",                 TK_SCAN},
     {"SCANS",                TK_SCANS},
-    {"_ANOMALYMASK",         TK_ANOMALYMASK},
+    {"_ANOMALYMARK",         TK_ANOMALYMARK},
 };
 // clang-format on
 

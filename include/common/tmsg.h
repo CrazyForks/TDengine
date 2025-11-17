@@ -406,6 +406,7 @@ typedef enum ENodeType {
   QUERY_NODE_DROP_MOUNT_STMT,
   QUERY_NODE_SCAN_DATABASE_STMT,
   QUERY_NODE_SCAN_VGROUPS_STMT,
+  QUERY_NODE_TRIM_DATABASE_WAL_STMT,
 
   // placeholder for [154, 180]
   QUERY_NODE_SHOW_CREATE_VIEW_STMT = 181,
@@ -454,6 +455,7 @@ typedef enum ENodeType {
   QUERY_NODE_ROLLUP_DATABASE_STMT,
   QUERY_NODE_ROLLUP_VGROUPS_STMT,
   QUERY_NODE_KILL_RETENTION_STMT,
+  QUERY_NODE_SET_VGROUP_KEEP_VERSION_STMT,
 
   // show statement nodes
   // see 'sysTableShowAdapter', 'SYSTABLE_SHOW_TYPE_OFFSET'
@@ -530,7 +532,7 @@ typedef enum ENodeType {
   QUERY_NODE_LOGIC_PLAN_DYN_QUERY_CTRL,
   QUERY_NODE_LOGIC_PLAN_FORECAST_FUNC,
   QUERY_NODE_LOGIC_PLAN_VIRTUAL_TABLE_SCAN,
-  QUERY_NODE_LOGIC_PLAN_IMPUTATION_FUNC,
+  QUERY_NODE_LOGIC_PLAN_ANALYSIS_FUNC,
 
   // physical plan node
   QUERY_NODE_PHYSICAL_PLAN_TAG_SCAN = 1100,
@@ -600,7 +602,7 @@ typedef enum ENodeType {
   QUERY_NODE_PHYSICAL_PLAN_HASH_EXTERNAL,
   QUERY_NODE_PHYSICAL_PLAN_MERGE_ALIGNED_EXTERNAL,
   QUERY_NODE_PHYSICAL_PLAN_STREAM_INSERT,
-  QUERY_NODE_PHYSICAL_PLAN_IMPUTATION_FUNC,
+  QUERY_NODE_PHYSICAL_PLAN_ANALYSIS_FUNC,
 } ENodeType;
 
 typedef struct {
@@ -1916,6 +1918,14 @@ int32_t tDeserializeSVnodeKillSsMigrateReq(void* buf, int32_t bufLen, SVnodeKill
 
 
 typedef struct {
+  int32_t vgId;
+  int64_t keepVersion;
+} SMndSetVgroupKeepVersionReq;
+
+int32_t tSerializeSMndSetVgroupKeepVersionReq(void* buf, int32_t bufLen, SMndSetVgroupKeepVersionReq* pReq);
+int32_t tDeserializeSMndSetVgroupKeepVersionReq(void* buf, int32_t bufLen, SMndSetVgroupKeepVersionReq* pReq);
+
+typedef struct {
   int32_t timestampSec;
   int32_t ttlDropMaxCount;
   int32_t nUids;
@@ -2082,6 +2092,7 @@ typedef struct {
   SArray*     vgroupIds;
   int32_t     compactId;
   int8_t      metaOnly;
+  int8_t      force;
 } SCompactDbReq;
 
 int32_t tSerializeSCompactDbReq(void* buf, int32_t bufLen, SCompactDbReq* pReq);
@@ -2583,6 +2594,7 @@ typedef struct {
       uint16_t reserved : 12;
     };
   };
+  int8_t force;  // force compact
 } SCompactVnodeReq;
 
 int32_t tSerializeSCompactVnodeReq(void* buf, int32_t bufLen, SCompactVnodeReq* pReq);
@@ -4135,6 +4147,8 @@ typedef struct {
   char              userApp[TSDB_APP_NAME_LEN];
   uint32_t          userIp;
   SIpRange          userDualIp;
+  char              sVer[TSDB_VERSION_LEN];
+  char              cInfo[CONNECTOR_INFO_LEN];
 } SClientHbReq;
 
 typedef struct {
@@ -4420,6 +4434,13 @@ typedef struct {
 int32_t tSerializeSMRecalcStreamReq(void* buf, int32_t bufLen, const SMRecalcStreamReq* pReq);
 int32_t tDeserializeSMRecalcStreamReq(void* buf, int32_t bufLen, SMRecalcStreamReq* pReq);
 void    tFreeMRecalcStreamReq(SMRecalcStreamReq *pReq);
+
+typedef struct SVndSetKeepVersionReq {
+  int64_t keepVersion;
+} SVndSetKeepVersionReq;
+
+int32_t tSerializeSVndSetKeepVersionReq(void* buf, int32_t bufLen, SVndSetKeepVersionReq* pReq);
+int32_t tDeserializeSVndSetKeepVersionReq(void* buf, int32_t bufLen, SVndSetKeepVersionReq* pReq);
 
 typedef struct SVUpdateCheckpointInfoReq {
   SMsgHead head;
@@ -5214,6 +5235,7 @@ int32_t tDeserializeSMqSeekReq(void* buf, int32_t bufLen, SMqSeekReq* pReq);
 #define SUBMIT_REQUEST_VERSION        (2)
 #define SUBMIT_REQ_WITH_BLOB          0x10
 #define SUBMIT_REQ_SCHEMA_RES         0x20
+#define SUBMIT_REQ_ONLY_CREATE_TABLE  0x40
 
 #define TD_REQ_FROM_TAOX_OLD 0x1  // for compatibility
 

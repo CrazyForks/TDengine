@@ -244,6 +244,10 @@ const char* nodesNodeName(ENodeType type) {
     case QUERY_NODE_BALANCE_VGROUP_LEADER_STMT:
     case QUERY_NODE_BALANCE_VGROUP_LEADER_DATABASE_STMT:
       return "BalanceVgroupLeaderStmt";
+    case QUERY_NODE_SET_VGROUP_KEEP_VERSION_STMT:
+      return "SetVgroupKeepVersionStmt";
+    case QUERY_NODE_TRIM_DATABASE_WAL_STMT:
+      return "TrimDbWalStmt";
     case QUERY_NODE_MERGE_VGROUP_STMT:
       return "MergeVgroupStmt";
     case QUERY_NODE_SHOW_DB_ALIVE_STMT:
@@ -423,7 +427,7 @@ const char* nodesNodeName(ENodeType type) {
       return "LogicInterpFunc";
     case QUERY_NODE_LOGIC_PLAN_FORECAST_FUNC:
       return "LogicForecastFunc";
-    case QUERY_NODE_LOGIC_PLAN_IMPUTATION_FUNC:
+    case QUERY_NODE_LOGIC_PLAN_ANALYSIS_FUNC:
       return "LogicImputationFunc";
     case QUERY_NODE_LOGIC_PLAN_GROUP_CACHE:
       return "LogicGroupCache";
@@ -493,7 +497,7 @@ const char* nodesNodeName(ENodeType type) {
       return "PhysiInterpFunc";
     case QUERY_NODE_PHYSICAL_PLAN_FORECAST_FUNC:
       return "PhysiForecastFunc";
-    case QUERY_NODE_PHYSICAL_PLAN_IMPUTATION_FUNC:
+    case QUERY_NODE_PHYSICAL_PLAN_ANALYSIS_FUNC:
       return "PhysiImputationFunc";
     case QUERY_NODE_PHYSICAL_PLAN_DISPATCH:
       return "PhysiDispatch";
@@ -1535,7 +1539,7 @@ static int32_t jsonToLogicForecastFuncNode(const SJson* pJson, void* pObj) {
 }
 
 static int32_t logicImputationFuncNodeToJson(const void* pObj, SJson* pJson) {
-  const SImputationFuncLogicNode* pNode = (const SImputationFuncLogicNode*)pObj;
+  const SGenericAnalysisLogicNode* pNode = (const SGenericAnalysisLogicNode*)pObj;
 
   int32_t code = logicPlanNodeToJson(pObj, pJson);
   if (TSDB_CODE_SUCCESS == code) {
@@ -1546,7 +1550,7 @@ static int32_t logicImputationFuncNodeToJson(const void* pObj, SJson* pJson) {
 }
 
 static int32_t jsonToLogicImputationFuncNode(const SJson* pJson, void* pObj) {
-  SImputationFuncLogicNode* pNode = (SImputationFuncLogicNode*)pObj;
+  SGenericAnalysisLogicNode* pNode = (SGenericAnalysisLogicNode*)pObj;
 
   int32_t code = jsonToLogicPlanNode(pJson, pObj);
   if (TSDB_CODE_SUCCESS == code) {
@@ -9736,6 +9740,10 @@ static int32_t specificNodeToJson(const void* pObj, SJson* pJson) {
       return TSDB_CODE_SUCCESS;  // SBalanceVgroupLeaderStmt has no fields to serialize.
     case QUERY_NODE_BALANCE_VGROUP_LEADER_DATABASE_STMT:
       return TSDB_CODE_SUCCESS;
+    case QUERY_NODE_SET_VGROUP_KEEP_VERSION_STMT:
+      return TSDB_CODE_SUCCESS;  // SSetVgroupKeepVersionStmt has simple fields, no need to serialize.
+    case QUERY_NODE_TRIM_DATABASE_WAL_STMT:
+      return TSDB_CODE_SUCCESS;  // STrimDbWalStmt has simple fields, no need to serialize.
     case QUERY_NODE_MERGE_VGROUP_STMT:
       return mergeVgroupStmtToJson(pObj, pJson);
     case QUERY_NODE_REDISTRIBUTE_VGROUP_STMT:
@@ -9867,7 +9875,7 @@ static int32_t specificNodeToJson(const void* pObj, SJson* pJson) {
       return logicInterpFuncNodeToJson(pObj, pJson);
     case QUERY_NODE_LOGIC_PLAN_FORECAST_FUNC:
       return logicForecastFuncNodeToJson(pObj, pJson);
-    case QUERY_NODE_LOGIC_PLAN_IMPUTATION_FUNC:
+    case QUERY_NODE_LOGIC_PLAN_ANALYSIS_FUNC:
       return logicImputationFuncNodeToJson(pObj, pJson);
     case QUERY_NODE_LOGIC_PLAN_GROUP_CACHE:
       return logicGroupCacheNodeToJson(pObj, pJson);
@@ -9934,7 +9942,7 @@ static int32_t specificNodeToJson(const void* pObj, SJson* pJson) {
       return physiInterpFuncNodeToJson(pObj, pJson);
     case QUERY_NODE_PHYSICAL_PLAN_FORECAST_FUNC:
       return physiForecastFuncNodeToJson(pObj, pJson);
-    case QUERY_NODE_PHYSICAL_PLAN_IMPUTATION_FUNC:
+    case QUERY_NODE_PHYSICAL_PLAN_ANALYSIS_FUNC:
       return physiForecastFuncNodeToJson(pObj, pJson);
     case QUERY_NODE_PHYSICAL_PLAN_DISPATCH:
       return physiDispatchNodeToJson(pObj, pJson);
@@ -10153,6 +10161,10 @@ static int32_t jsonToSpecificNode(const SJson* pJson, void* pObj) {
       return TSDB_CODE_SUCCESS;
     case QUERY_NODE_BALANCE_VGROUP_LEADER_DATABASE_STMT:
       return TSDB_CODE_SUCCESS;  // SBalanceVgroupLeaderStmt has no fields to deserialize.
+    case QUERY_NODE_SET_VGROUP_KEEP_VERSION_STMT:
+      return TSDB_CODE_SUCCESS;  // SSetVgroupKeepVersionStmt has simple fields, no need to deserialize.
+    case QUERY_NODE_TRIM_DATABASE_WAL_STMT:
+      return TSDB_CODE_SUCCESS;  // STrimDbWalStmt has simple fields, no need to deserialize.
     case QUERY_NODE_MERGE_VGROUP_STMT:
       return jsonToMergeVgroupStmt(pJson, pObj);
     case QUERY_NODE_REDISTRIBUTE_VGROUP_STMT:
@@ -10288,7 +10300,7 @@ static int32_t jsonToSpecificNode(const SJson* pJson, void* pObj) {
       return jsonToLogicInterpFuncNode(pJson, pObj);
     case QUERY_NODE_LOGIC_PLAN_FORECAST_FUNC:
       return jsonToLogicImputationFuncNode(pJson, pObj);
-    case QUERY_NODE_LOGIC_PLAN_IMPUTATION_FUNC:
+    case QUERY_NODE_LOGIC_PLAN_ANALYSIS_FUNC:
       return jsonToLogicForecastFuncNode(pJson, pObj);
     case QUERY_NODE_LOGIC_PLAN_GROUP_CACHE:
       return jsonToLogicGroupCacheNode(pJson, pObj);
@@ -10353,7 +10365,7 @@ static int32_t jsonToSpecificNode(const SJson* pJson, void* pObj) {
       return jsonToPhysiIndefRowsFuncNode(pJson, pObj);
     case QUERY_NODE_PHYSICAL_PLAN_INTERP_FUNC:
       return jsonToPhysiInterpFuncNode(pJson, pObj);
-    case QUERY_NODE_PHYSICAL_PLAN_IMPUTATION_FUNC:
+    case QUERY_NODE_PHYSICAL_PLAN_ANALYSIS_FUNC:
     case QUERY_NODE_PHYSICAL_PLAN_FORECAST_FUNC:
       return jsonToPhysiForecastFuncNode(pJson, pObj);
     case QUERY_NODE_PHYSICAL_PLAN_DISPATCH:

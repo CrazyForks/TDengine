@@ -728,6 +728,12 @@ int32_t nodesMakeNode(ENodeType type, SNode** ppNodeOut) {
     case QUERY_NODE_BALANCE_VGROUP_LEADER_DATABASE_STMT:
       code = makeNode(type, sizeof(SBalanceVgroupLeaderStmt), &pNode);
       break;
+    case QUERY_NODE_SET_VGROUP_KEEP_VERSION_STMT:
+      code = makeNode(type, sizeof(SSetVgroupKeepVersionStmt), &pNode);
+      break;
+    case QUERY_NODE_TRIM_DATABASE_WAL_STMT:
+      code = makeNode(type, sizeof(STrimDbWalStmt), &pNode);
+      break;
     case QUERY_NODE_MERGE_VGROUP_STMT:
       code = makeNode(type, sizeof(SMergeVgroupStmt), &pNode);
       break;
@@ -925,8 +931,8 @@ int32_t nodesMakeNode(ENodeType type, SNode** ppNodeOut) {
     case QUERY_NODE_LOGIC_PLAN_FORECAST_FUNC:
       code = makeNode(type, sizeof(SForecastFuncLogicNode), &pNode);
       break;
-    case QUERY_NODE_LOGIC_PLAN_IMPUTATION_FUNC:
-      code = makeNode(type, sizeof(SImputationFuncLogicNode), &pNode);
+    case QUERY_NODE_LOGIC_PLAN_ANALYSIS_FUNC:
+      code = makeNode(type, sizeof(SGenericAnalysisLogicNode), &pNode);
       break;
     case QUERY_NODE_LOGIC_PLAN_GROUP_CACHE:
       code = makeNode(type, sizeof(SGroupCacheLogicNode), &pNode);
@@ -1033,8 +1039,8 @@ int32_t nodesMakeNode(ENodeType type, SNode** ppNodeOut) {
     case QUERY_NODE_PHYSICAL_PLAN_FORECAST_FUNC:
       code = makeNode(type, sizeof(SForecastFuncLogicNode), &pNode);
       break;
-    case QUERY_NODE_PHYSICAL_PLAN_IMPUTATION_FUNC:
-      code = makeNode(type, sizeof(SImputationFuncPhysiNode), &pNode);
+    case QUERY_NODE_PHYSICAL_PLAN_ANALYSIS_FUNC:
+      code = makeNode(type, sizeof(SGenericAnalysisPhysiNode), &pNode);
       break;
     case QUERY_NODE_PHYSICAL_PLAN_DISPATCH:
       code = makeNode(type, sizeof(SDataDispatcherNode), &pNode);
@@ -1762,6 +1768,8 @@ void nodesDestroyNode(SNode* pNode) {
     case QUERY_NODE_ASSIGN_LEADER_STMT: 
     case QUERY_NODE_BALANCE_VGROUP_LEADER_STMT:           // no pointer field
     case QUERY_NODE_BALANCE_VGROUP_LEADER_DATABASE_STMT:  // no pointer field
+    case QUERY_NODE_SET_VGROUP_KEEP_VERSION_STMT:          // no pointer field
+    case QUERY_NODE_TRIM_DATABASE_WAL_STMT:               // no pointer field
     case QUERY_NODE_MERGE_VGROUP_STMT:                    // no pointer field
       break;
     case QUERY_NODE_REDISTRIBUTE_VGROUP_STMT:
@@ -2086,8 +2094,8 @@ void nodesDestroyNode(SNode* pNode) {
       nodesDestroyList(pLogicNode->pFuncs);
       break;
     }
-    case QUERY_NODE_LOGIC_PLAN_IMPUTATION_FUNC: {
-      SImputationFuncLogicNode* pLogicNode = (SImputationFuncLogicNode*)pNode;
+    case QUERY_NODE_LOGIC_PLAN_ANALYSIS_FUNC: {
+      SGenericAnalysisLogicNode* pLogicNode = (SGenericAnalysisLogicNode*)pNode;
       destroyLogicNode((SLogicNode*)pLogicNode);
       nodesDestroyList(pLogicNode->pFuncs);
       break;
@@ -2300,7 +2308,7 @@ void nodesDestroyNode(SNode* pNode) {
       nodesDestroyNode(pPhyNode->pTimeSeries);
       break;
     }
-    case QUERY_NODE_PHYSICAL_PLAN_IMPUTATION_FUNC:
+    case QUERY_NODE_PHYSICAL_PLAN_ANALYSIS_FUNC:
     case QUERY_NODE_PHYSICAL_PLAN_FORECAST_FUNC: {
       SForecastFuncPhysiNode* pPhyNode = (SForecastFuncPhysiNode*)pNode;
       destroyPhysiNode((SPhysiNode*)pPhyNode);
