@@ -149,8 +149,8 @@ class TestNewStreamCompatibility:
         
         # check results
         assert self.checkStreamResults("res_count", 3)
-        assert self.checkStreamResults("res_inter", 3)
         assert self.checkStreamResults("res_state", 3)
+        assert self.checkStreamResults("res_inter", 3)
 
     def verifyDataOnCurrentVersion(self):
         """
@@ -158,7 +158,57 @@ class TestNewStreamCompatibility:
         2. Verify stream processing functionality
         3. Validate aggregation results accuracy
         """
+        streams: list[StreamItem] = {}
+        stream = StreamItem(
+            id=0,
+            stream="""create stream test_stream_compatibility.s_count 
+                count_window(3) from test_stream_compatibility.stb partition by 
+                tbname into test_stream_compatibility.res_count as select 
+                _twstart, _twend, sum(v1) as sum_v1, avg(v2) as avg_v2 from 
+                %%tbname where ts >= _twstart and ts <= _twend""",
+            res_query="select * from test_stream_compatibility.res_count;",
+            exp_query="""select _wstart, _wend, sum(v1) as sum_v1, avg(v2) as 
+                avg_v2 from test_stream_compatibility.ctb1 count_window(3) 
+                limit 3;""",
+        )
+        streams.append(stream)
+
+        stream = StreamItem(
+            id=1,
+            stream="""create stream test_stream_compatibility.s_state 
+                state_window(v1) from test_stream_compatibility.stb partition by 
+                tbname into test_stream_compatibility.res_state as select 
+                _twstart, _twend, sum(v1) as sum_v1, avg(v2) as avg_v2 from 
+                %%tbname where ts >= _twstart and ts <= _twend""",
+            res_query="select * from test_stream_compatibility.res_state;",
+            exp_query="""select _wstart, _wend, sum(v1) as sum_v1, avg(v2) as 
+                avg_v2 from test_stream_compatibility.ctb1 state_window(v1) 
+                limit 3;"""
+        )
+        streams.append(stream)
+
+        stream = StreamItem(
+            id=2,
+            stream="""create stream test_stream_compatibility.s_inter 
+                interval(3s) sliding(3s) from test_stream_compatibility.stb 
+                into test_stream_compatibility.res_inter as select _twstart, 
+                _twend, sum(v1) as sum_v1, avg(v2) as avg_v2 from 
+                test_stream_compatibility.stb where ts >= _twstart and ts < 
+                _twend""",
+            res_query="select * from test_stream_compatibility.res_inter;",
+            exp_query="""select _wstart, _wend, sum(v1) as sum_v1, avg(v2) as 
+                avg_v2 from test_stream_compatibility.ctb1 interval(3s) 
+                sliding(3s) limit 3;"""
+        )
+        streams.append(stream)
+
         tdStream.checkStreamStatus()
+
+        # insert more data
+
+        for stream in streams:
+            stream.checkResults()
+        
 
     # copied from download_enterprise_package.py
     def installTaosd(self, cPath, base_version):
