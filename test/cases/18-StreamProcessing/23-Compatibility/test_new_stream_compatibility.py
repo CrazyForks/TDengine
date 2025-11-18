@@ -288,7 +288,9 @@ class TestNewStreamCompatibility:
         for _ in range(retry_times):
             result = subprocess.run(command, shell=True, text=True, capture_output=True)
             if result.returncode == 0:
-                if get_row_count(result.stdout) == expect_row_num:
+                count = get_row_count(result.stdout)
+                tdLog.debug(f"Stream result rows:{count}, expect:{expect_row_num}")
+                if count == expect_row_num:
                     tdLog.info(f"Stream result table {res_table} check executed successfully.")
                     return True
             else:
