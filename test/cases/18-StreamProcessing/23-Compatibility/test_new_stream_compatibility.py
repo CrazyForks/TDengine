@@ -158,7 +158,7 @@ class TestNewStreamCompatibility:
         2. Verify stream processing functionality
         3. Validate aggregation results accuracy
         """
-        streams: list[StreamItem] = {}
+        streams: list[StreamItem] = []
         stream = StreamItem(
             id=0,
             stream="""create stream test_stream_compatibility.s_count 
