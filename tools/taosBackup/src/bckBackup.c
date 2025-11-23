@@ -11,19 +11,63 @@
     
 #include "backArgs.h"
 
-int backDBMeta(const char *dbName) {
-    return TSDB_CODE_SUCCESS;
+
+int backDatabaseMeta(const char *dbName) {
+    int code = TSDB_CODE_FAILED;
+
+    // database
+    code = backCreateDbSql(dbName);
+
+    // super tables
+    code = backCreateStbsSql(dbName);
+
+    return code;
 }
 
-int backDBData(const char *dbName) {
-    return TSDB_CODE_SUCCESS;
+int backDatabaseData(const char *dbName) {
+    int code = TSDB_CODE_FAILED;
+
+    char ** stbNames = getDBSuperTableNames(dbName);
+    for (int i = 0; stbNames[i] != NULL; i++) {
+        printf("backup super table data: %s.%s\n", dbName, stbNames[i]);
+        code = backStbData(dbName, stbNames[i]);
+        if (code != TSDB_CODE_SUCCESS) {
+            printf("backup super table data failed: %s.%s, code: %d\n", dbName, stbNames[i], code);
+            return code;
+        }
+    }
+    
+    return code;
+}
+
+
+// backup database 
+int backDatabase(const char *dbName) {
+    // back up database meta
+    int code = TSDB_CODE_FAILED;
+    code = backDatabaeMeta(dbName);
+    if (code != TSDB_CODE_SUCCESS) {
+        printf("backup database meta failed, code: %d\n", code);
+        return code;
+    }
+
+    // back up super tables meta
+    code = backDatabaseData(dbName);
+    if (code != TSDB_CODE_SUCCESS) {
+        printf("backup super table meta failed, code: %d\n", code);
+        return code;
+    }
+
+
+
+    return code;
 }
 
 
 // backup main function
 int backupMain(){
     // init
-    int code = TSDB_CODE_SUCCESS;
+    int code = TSDB_CODE_FAILED;
 
     char **backDB = argsGetBackDB();
     if (backDB == NULL) {
@@ -34,15 +78,8 @@ int backupMain(){
     for (int i = 0; backDB[i] != NULL; i++) {
         printf("backup database: %s\n", backDB[i]);
 
-        // backup meta
-        code = backDBMeta(backDB[i]);
-        if (code != TSDB_CODE_SUCCESS) {
-            printf("backup meta failed, code: %d\n", code);
-            return code;
-        }
-
         // backup data
-        code = backDBData(backDB[i]);
+        code = backupDatabase(backDB[i]);
         if (code != TSDB_CODE_SUCCESS) {
             printf("backup data failed, code: %d\n", code);
             return code;
