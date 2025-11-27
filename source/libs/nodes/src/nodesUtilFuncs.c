@@ -17,6 +17,7 @@
 #include "functionMgt.h"
 #include "nodes.h"
 #include "nodesUtil.h"
+#include "osMemory.h"
 #include "plannodes.h"
 #include "querynodes.h"
 #include "taos.h"
@@ -761,6 +762,10 @@ int32_t nodesMakeNode(ENodeType type, SNode** ppNodeOut) {
     case QUERY_NODE_SHOW_ANODES_STMT:
     case QUERY_NODE_SHOW_ANODES_FULL_STMT:
     case QUERY_NODE_SHOW_BNODES_STMT:
+    case QUERY_NODE_SHOW_XNODES_STMT:
+    case QUERY_NODE_SHOW_XNODE_TASKS_STMT:
+    case QUERY_NODE_SHOW_XNODE_AGENTS_STMT:
+    case QUERY_NODE_SHOW_XNODE_JOBS_STMT:
     case QUERY_NODE_SHOW_SNODES_STMT:
     case QUERY_NODE_SHOW_BACKUP_NODES_STMT:
     case QUERY_NODE_SHOW_ARBGROUPS_STMT:
@@ -1076,6 +1081,36 @@ int32_t nodesMakeNode(ENodeType type, SNode** ppNodeOut) {
       break;
     case QUERY_NODE_SHOW_SCORES_STMT:
       code = TSDB_CODE_OPS_NOT_SUPPORT;
+      break;
+    case QUERY_NODE_XNODE_TASK_OPTIONS:
+      code = makeNode(type, sizeof(SXnodeTaskOptions), &pNode);
+      break;
+    case QUERY_NODE_XNODE_TASK_SOURCE_OPT:
+      code = makeNode(type, sizeof(SXTaskSource), &pNode);
+      break;
+    case QUERY_NODE_XNODE_TASK_SINK_OPT:
+      code = makeNode(type, sizeof(SXTaskSink), &pNode);
+      break;
+    case QUERY_NODE_CREATE_XNODE_STMT:
+      code = makeNode(type, sizeof(SCreateXnodeStmt), &pNode);
+      break;
+    case QUERY_NODE_DROP_XNODE_STMT:
+      code = makeNode(type, sizeof(SDropXnodeStmt), &pNode);
+      break;
+    case QUERY_NODE_UPDATE_XNODE_STMT:
+      code = makeNode(type, sizeof(SUpdateXnodeStmt), &pNode);
+      break;
+    case QUERY_NODE_CREATE_XNODE_TASK_STMT:
+      code = makeNode(type, sizeof(SCreateXnodeTaskStmt), &pNode);
+      break;
+    case QUERY_NODE_DROP_XNODE_TASK_STMT:
+      code = makeNode(type, sizeof(SDropXnodeTaskStmt), &pNode);
+      break;
+    case QUERY_NODE_CREATE_XNODE_JOB_STMT:
+      code = makeNode(type, sizeof(SCreateXnodeJobStmt), &pNode);
+      break;
+    case QUERY_NODE_DROP_XNODE_JOB_STMT:
+      code = makeNode(type, sizeof(SDropXnodeJobStmt), &pNode);
       break;
     default:
       code = TSDB_CODE_OPS_NOT_SUPPORT;
@@ -1791,6 +1826,10 @@ void nodesDestroyNode(SNode* pNode) {
     case QUERY_NODE_SHOW_QNODES_STMT:
     case QUERY_NODE_SHOW_ANODES_STMT:
     case QUERY_NODE_SHOW_ANODES_FULL_STMT:
+    case QUERY_NODE_SHOW_XNODES_STMT:
+    case QUERY_NODE_SHOW_XNODE_TASKS_STMT:
+    case QUERY_NODE_SHOW_XNODE_AGENTS_STMT:
+    case QUERY_NODE_SHOW_XNODE_JOBS_STMT:
     case QUERY_NODE_SHOW_SNODES_STMT:
     case QUERY_NODE_SHOW_BACKUP_NODES_STMT:
     case QUERY_NODE_SHOW_ARBGROUPS_STMT:
@@ -2369,6 +2408,33 @@ void nodesDestroyNode(SNode* pNode) {
     case QUERY_NODE_PHYSICAL_PLAN:
       nodesDestroyList(((SQueryPlan*)pNode)->pSubplans);
       break;
+      case QUERY_NODE_XNODE_TASK_SOURCE_OPT:
+      xFreeTaskSource(&((SXTaskSource*)pNode)->source);
+      break;
+    case QUERY_NODE_XNODE_TASK_SINK_OPT:
+      xFreeTaskSink(&((SXTaskSink*)pNode)->sink);
+      break;
+    case QUERY_NODE_XNODE_TASK_OPTIONS: {
+      // xFreeTaskOptions(&((SXnodeTaskOptions*)pNode)->opts);
+      SXnodeTaskOptions* pOptions = (SXnodeTaskOptions*)pNode;
+      printf("Destroying Xnode task options with %d options\n", pOptions->optionsNum);
+      for (int32_t i = 0; i < pOptions->optionsNum; ++i) {
+        taosMemFreeClear(pOptions->options[i]);
+      }
+      break;
+    }
+    case QUERY_NODE_CREATE_XNODE_TASK_STMT: {
+      SCreateXnodeTaskStmt* pStmt = (SCreateXnodeTaskStmt*)pNode;
+      nodesDestroyNode((SNode*)pStmt->source);
+      nodesDestroyNode((SNode*)pStmt->sink);
+      nodesDestroyNode((SNode*)pStmt->options);
+      break;
+    }
+    case QUERY_NODE_CREATE_XNODE_JOB_STMT: {
+      SCreateXnodeJobStmt* pStmt = (SCreateXnodeJobStmt*)pNode;
+      nodesDestroyNode((SNode*)pStmt->options);
+      break;
+    }
     default:
       break;
   }

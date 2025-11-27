@@ -177,7 +177,11 @@ typedef enum {
   SDB_RSMA = 35,
   SDB_RETENTION = 36,
   SDB_RETENTION_DETAIL = 37,
-  SDB_MAX = 38
+  SDB_XNODE = 38,
+  SDB_XNODE_TASK = 39,
+  SDB_XNODE_AGENT = 40,
+  SDB_XNODE_JOB = 41,
+  SDB_MAX = 42
 } ESdbType;
 
 typedef struct SSdbRaw {

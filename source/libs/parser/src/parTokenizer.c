@@ -406,6 +406,8 @@ static SKeyword keywordTable[] = {
     {"ASSIGN",               TK_ASSIGN},
     {"TRUE_FOR",             TK_TRUE_FOR},
     {"META_ONLY",            TK_META_ONLY},
+    {"XNODE",                TK_XNODE},
+    {"XNODES",               TK_XNODES},
     {"VTABLES",              TK_VTABLES},
     {"META_ONLY",            TK_META_ONLY},
     {"_IMPROWTS",            TK_IMPROWTS},

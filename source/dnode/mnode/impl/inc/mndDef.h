@@ -19,8 +19,11 @@
 #include "os.h"
 
 #include "cJSON.h"
+#include "mnode.h"
 #include "scheduler.h"
 #include "sync.h"
+#include "tarray.h"
+#include "tconfig.h"
 #include "thash.h"
 #include "tlist.h"
 #include "tlog.h"
@@ -90,6 +93,15 @@ typedef enum {
   MND_OPER_ROLLUP_DB,
   MND_OPER_SHOW_STB,
   MND_OPER_ALTER_RSMA,
+  MND_OPER_CREATE_XNODE,
+  MND_OPER_UPDATE_XNODE,
+  MND_OPER_DROP_XNODE,
+  MND_OPER_CREATE_XNODE_TASK,
+  MND_OPER_UPDATE_XNODE_TASK,
+  MND_OPER_DROP_XNODE_TASK,
+  MND_OPER_CREATE_XNODE_JOB,
+  MND_OPER_UPDATE_XNODE_JOB,
+  MND_OPER_DROP_XNODE_JOB,
 } EOperType;
 
 typedef enum {
@@ -273,6 +285,55 @@ typedef struct {
   SArray** algos;
 } SAnodeObj;
 
+/**
+ * @brief Stucture for XNode object.
+ *
+ * This structure represents an XNode in the system, which contains
+ * information about the node's ID, creation and update times, version,
+ * URL length, status, and a lock for synchronization.
+ */
+typedef struct {
+  int32_t  id;
+  int64_t  createdTime;
+  int64_t  updateTime;
+  int32_t  version;
+  int32_t  urlLen;
+  int32_t  numOfAlgos;
+  int32_t  status;
+  SRWLatch lock;
+  char*    url;
+} SXnodeObj;
+
+typedef struct {
+  int32_t  id;
+  int64_t  createdTime;
+  int64_t  updateTime;
+  int32_t  version;
+  int32_t  nameLen;
+  int32_t  status;
+  int32_t  via;
+  SRWLatch lock;
+  char*    name;
+  char*    sourceType;
+  char*    sourceDsn;
+  char*    sinkType;
+  char*    sinkDsn;
+  char*    parser;
+  SArray** labels;
+  int32_t  numOfLabels;
+} SXnodeTaskObj;
+
+typedef struct {
+  int32_t  id;
+  int32_t  tid;
+  int64_t  createdTime;
+  int64_t  updateTime;
+  int32_t  version;
+  int32_t  configLen;
+  SRWLatch lock;
+  char*    config;
+} SXnodeJobObj;
+
 typedef struct {
   int32_t    id;
   int64_t    createdTime;
@@ -293,7 +354,6 @@ typedef struct {
   SDnodeObj* pDnode;
   SQnodeLoad load;
 } SQnodeObj;
-
 
 typedef struct {
   int32_t    id;

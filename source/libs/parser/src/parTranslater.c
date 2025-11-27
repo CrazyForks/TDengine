@@ -30,10 +30,12 @@
 #include "filter.h"
 #include "functionMgt.h"
 #include "parUtil.h"
+#include "planner.h"
 #include "scalar.h"
 #include "systable.h"
 #include "tanalytics.h"
 #include "tcol.h"
+#include "tdef.h"
 #include "tglobal.h"
 #include "tmsg.h"
 #include "ttime.h"
@@ -452,7 +454,35 @@ static const SSysTableShowAdapter sysTableShowAdapter[] = {
     .pTableName = TSDB_INS_TABLE_RETENTION_DETAILS,
     .numOfShowCols = 1,
     .pShowCols = {"*"}
-  }
+  },
+  {
+    .showType = QUERY_NODE_SHOW_XNODES_STMT,
+    .pDbName = TSDB_INFORMATION_SCHEMA_DB,
+    .pTableName = TSDB_INS_TABLE_XNODES,
+    .numOfShowCols = 1,
+    .pShowCols = {"*"}
+  },
+  {
+    .showType = QUERY_NODE_SHOW_XNODE_TASKS_STMT,
+    .pDbName = TSDB_INFORMATION_SCHEMA_DB,
+    .pTableName = TSDB_INS_TABLE_XNODE_TASKS,
+    .numOfShowCols = 1,
+    .pShowCols = {"*"}
+  },
+  {
+    .showType = QUERY_NODE_SHOW_XNODE_AGENTS_STMT,
+    .pDbName = TSDB_INFORMATION_SCHEMA_DB,
+    .pTableName = TSDB_INS_TABLE_XNODE_AGENTS,
+    .numOfShowCols = 1,
+    .pShowCols = {"*"}
+  },
+  {
+    .showType = QUERY_NODE_SHOW_XNODE_JOBS_STMT,
+    .pDbName = TSDB_INFORMATION_SCHEMA_DB,
+    .pTableName = TSDB_INS_TABLE_XNODE_JOBS,
+    .numOfShowCols = 1,
+    .pShowCols = {"*"}
+  },
 };
 // clang-format on
 
@@ -10620,6 +10650,19 @@ static int32_t fillCmdSql(STranslateContext* pCxt, int16_t msgType, void* pReq) 
       break;
     }
 
+    case TDMT_MND_CREATE_XNODE: {
+      FILL_CMD_SQL(sql, sqlLen, pCmdReq, SMCreateXnodeReq, pReq);
+      break;
+    }
+    case TDMT_MND_DROP_XNODE: {
+      FILL_CMD_SQL(sql, sqlLen, pCmdReq, SMDropXnodeReq, pReq);
+      break;
+    }
+    case TDMT_MND_UPDATE_XNODE: {
+      FILL_CMD_SQL(sql, sqlLen, pCmdReq, SMUpdateXnodeReq, pReq);
+      break;
+    }
+
     case TDMT_MND_CREATE_MNODE: {
       FILL_CMD_SQL(sql, sqlLen, pCmdReq, SMCreateMnodeReq, pReq);
       break;
@@ -12532,6 +12575,176 @@ static int32_t translateUpdateAnode(STranslateContext* pCxt, SUpdateAnodeStmt* p
 
   int32_t code = buildCmdMsg(pCxt, TDMT_MND_UPDATE_ANODE, (FSerializeFunc)tSerializeSMUpdateAnodeReq, &updateReq);
   tFreeSMUpdateAnodeReq(&updateReq);
+  return code;
+}
+
+static int32_t translateCreateXnode(STranslateContext* pCxt, SCreateXnodeStmt* pStmt) {
+  printf("translateCreateXnode: %s\n", pStmt->url);
+  SMCreateXnodeReq createReq = {0};
+
+  createReq.urlLen = strlen(pStmt->url) + 1;
+  if (createReq.urlLen > TSDB_XNODE_URL_LEN) {
+    return TSDB_CODE_MND_ANODE_TOO_LONG_URL;
+  }
+  createReq.url = taosMemoryCalloc(createReq.urlLen, 1);
+  if (createReq.url == NULL) {
+    return TSDB_CODE_OUT_OF_MEMORY;
+  }
+  tstrncpy(createReq.url, pStmt->url, createReq.urlLen);
+
+  createReq.userLen = strlen(pStmt->user) + 1;
+  if (createReq.userLen > TSDB_USER_LEN) {
+    return TSDB_CODE_MND_USER_NOT_AVAILABLE;
+  }
+  createReq.user = taosMemoryCalloc(createReq.userLen, 1);
+  if (createReq.user == NULL) {
+    return TSDB_CODE_OUT_OF_MEMORY;
+  }
+  tstrncpy(createReq.user, pStmt->user, createReq.userLen);
+
+  createReq.passLen = strlen(pStmt->pass) + 1;
+  if (createReq.urlLen > TSDB_USET_PASSWORD_LONGLEN) {
+    return TSDB_CODE_MND_INVALID_PASS_FORMAT;
+  }
+  createReq.pass = taosMemoryCalloc(createReq.passLen, 1);
+  if (createReq.pass == NULL) {
+    return TSDB_CODE_OUT_OF_MEMORY;
+  }
+  tstrncpy(createReq.pass, pStmt->pass, createReq.passLen);
+  // taosEncryptPass_c((uint8_t*)pStmt->pass, strlen(pStmt->pass), createReq.pass);
+  createReq.passIsMd5 = 0;
+
+  int32_t code = buildCmdMsg(pCxt, TDMT_MND_CREATE_XNODE, (FSerializeFunc)tSerializeSMCreateXnodeReq, &createReq);
+  tFreeSMCreateXnodeReq(&createReq);
+  return code;
+}
+
+static int32_t translateDropXnode(STranslateContext* pCxt, SDropXnodeStmt* pStmt) {
+  SMDropXnodeReq dropReq = {0};
+  dropReq.xnodeId = pStmt->xnodeId;
+
+  int32_t code = buildCmdMsg(pCxt, TDMT_MND_DROP_XNODE, (FSerializeFunc)tSerializeSMDropXnodeReq, &dropReq);
+  tFreeSMDropXnodeReq(&dropReq);
+  return code;
+}
+
+static int32_t translateUpdateXnode(STranslateContext* pCxt, SUpdateXnodeStmt* pStmt) {
+  SMUpdateXnodeReq updateReq = {0};
+  updateReq.xnodeId = pStmt->xnodeId;
+
+  int32_t code = buildCmdMsg(pCxt, TDMT_MND_UPDATE_XNODE, (FSerializeFunc)tSerializeSMUpdateXnodeReq, &updateReq);
+  tFreeSMUpdateXnodeReq(&updateReq);
+  return code;
+}
+
+static int32_t covertXNodeTaskOptions(SXnodeTaskOptions* pOptions, xTaskOptions* pOpts) {
+  if (pOptions == NULL) return TSDB_CODE_INVALID_OPTION;
+  if (pOpts == NULL) {
+    xTaskOptions* pNewOpts = taosMemoryCalloc(1, sizeof(xTaskOptions));
+    if (pNewOpts == NULL) {
+      return TSDB_CODE_OUT_OF_MEMORY;
+    }
+    pOpts = pNewOpts;
+  }
+
+  pOpts->via = pOptions->via;
+  pOpts->trigger = xCreateCowStr(strlen(pOptions->trigger), pOptions->trigger, true);
+  pOpts->health = xCreateCowStr(strlen(pOptions->health), pOptions->health, true);
+  pOpts->parser = xCreateCowStr(strlen(pOptions->parser), pOptions->parser, true);
+  pOpts->optionsNum = pOptions->optionsNum;
+
+  for (int32_t i = 0; i < pOptions->optionsNum; ++i) {
+    const char* option = pOptions->options[i];
+    if (option != NULL) {
+      xSetCowStr(pOpts->options + i, strlen(option), option, true);
+    }
+  }
+  return TSDB_CODE_SUCCESS;
+}
+static int32_t translateCreateXnodeTask(STranslateContext* pCxt, SCreateXnodeTaskStmt* pStmt) {
+  printf("translateCreateXnodeTask: %s\n", pStmt->name);
+  SMCreateXnodeTaskReq createReq = {0};
+
+  createReq.name = xCreateCowStr(strlen(pStmt->name), pStmt->name, false);
+  createReq.source = xCloneTaskSourceRef(&pStmt->source->source);
+  createReq.sink = xCloneTaskSinkRef(&pStmt->sink->sink);
+  covertXNodeTaskOptions(pStmt->options, &createReq.options);
+  printXnodeTaskOptions(&createReq.options);
+
+  int32_t code =
+      buildCmdMsg(pCxt, TDMT_MND_CREATE_XNODE_TASK, (FSerializeFunc)tSerializeSMCreateXnodeTaskReq, &createReq);
+  tFreeSMCreateXnodeTaskReq(&createReq);
+  return code;
+}
+
+static int32_t translateDropXnodeTask(STranslateContext* pCxt, SDropXnodeTaskStmt* pStmt) {
+  printf("translateDropXnodeTask on task:%d\n", pStmt->tid);
+  SMDropXnodeTaskReq dropReq = {0};
+  dropReq.tid = pStmt->tid;
+  if (pStmt->name != NULL) {
+    dropReq.nameLen = strlen(pStmt->name) + 1;
+    dropReq.name = pStmt->name;
+  }
+
+  int32_t code = buildCmdMsg(pCxt, TDMT_MND_DROP_XNODE_TASK, (FSerializeFunc)tSerializeSMDropXnodeTaskReq, &dropReq);
+  tFreeSMDropXnodeTaskReq(&dropReq);
+  return code;
+}
+
+static int32_t translateUpdateXnodeTask(STranslateContext* pCxt, SUpdateXnodeTaskStmt* pStmt) {
+  SMUpdateXnodeTaskReq updateReq = {0};
+  updateReq.tid = pStmt->tid;
+
+  int32_t code = buildCmdMsg(pCxt, TDMT_MND_UPDATE_XNODE, (FSerializeFunc)tSerializeSMUpdateXnodeTaskReq, &updateReq);
+  tFreeSMUpdateXnodeTaskReq(&updateReq);
+  return code;
+}
+
+static const char* getXnodeTaskOptionByName(SXnodeTaskOptions* pOptions, const char* name) {
+  if (pOptions == NULL || name == NULL) return NULL;
+  printf("optionsNum: %d\n", pOptions->optionsNum);
+  for (int32_t i = 0; i < pOptions->optionsNum; ++i) {
+    const char* option = pOptions->options[i];
+    printf("option %d: %s\n", i, option);
+    if (option != NULL && strncasecmp(option, name, strlen(name)) == 0 && option[strlen(name)] == '=') {
+      return option + strlen(name) + 1;
+    }
+  }
+  return NULL;
+}
+
+static int32_t translateCreateXnodeJob(STranslateContext* pCxt, SCreateXnodeJobStmt* pStmt) {
+  printf("translateCreateXnodeJob on task:%d\n", pStmt->tid);
+  SMCreateXnodeJobReq createReq = {0};
+
+  const char* config = getXnodeTaskOptionByName(pStmt->options, "config");
+  if (config == NULL) {
+    return generateSyntaxErrMsgExt(&pCxt->msgBuf, TSDB_CODE_MND_XNODE_JOB_SYNTAX_ERROR, "Missing option: config");
+  }
+  createReq.tid = pStmt->tid;
+  createReq.configLen = strlen(config) + 1;
+  if (createReq.configLen > TSDB_XNODE_TASK_JOB_CONFIG_LEN) {
+    return TSDB_CODE_MND_XNODE_TASK_JOB_CONFIG_TOO_LONG;
+  }
+  createReq.config = taosMemoryCalloc(createReq.configLen, 1);
+  if (createReq.config == NULL) {
+    return TSDB_CODE_OUT_OF_MEMORY;
+  }
+  tstrncpy(createReq.config, config, createReq.configLen);
+
+  int32_t code =
+      buildCmdMsg(pCxt, TDMT_MND_CREATE_XNODE_JOB, (FSerializeFunc)tSerializeSMCreateXnodeJobReq, &createReq);
+  tFreeSMCreateXnodeJobReq(&createReq);
+  return code;
+}
+
+static int32_t translateDropXnodeJob(STranslateContext* pCxt, SDropXnodeJobStmt* pStmt) {
+  SMDropXnodeJobReq dropReq = {0};
+  dropReq.tid = pStmt->tid;
+  dropReq.jid = pStmt->jid;
+
+  int32_t code = buildCmdMsg(pCxt, TDMT_MND_DROP_XNODE_JOB, (FSerializeFunc)tSerializeSMDropXnodeJobReq, &dropReq);
+  tFreeSMDropXnodeJobReq(&dropReq);
   return code;
 }
 
@@ -17439,6 +17652,25 @@ _return:
     case QUERY_NODE_ALTER_RSMA_STMT:
       code = translateAlterRsma(pCxt, (SAlterRsmaStmt*)pNode);
       break;
+    /** XNode part */
+    case QUERY_NODE_CREATE_XNODE_STMT:
+      code = translateCreateXnode(pCxt, (SCreateXnodeStmt*)pNode);
+      break;
+    case QUERY_NODE_DROP_XNODE_STMT:
+      code = translateDropXnode(pCxt, (SDropXnodeStmt*)pNode);
+      break;
+    case QUERY_NODE_CREATE_XNODE_TASK_STMT:
+      code = translateCreateXnodeTask(pCxt, (SCreateXnodeTaskStmt*)pNode);
+      break;
+    case QUERY_NODE_DROP_XNODE_TASK_STMT:
+      code = translateDropXnodeTask(pCxt, (SDropXnodeTaskStmt*)pNode);
+      break;
+    case QUERY_NODE_CREATE_XNODE_JOB_STMT:
+      code = translateCreateXnodeJob(pCxt, (SCreateXnodeJobStmt*)pNode);
+      break;
+    case QUERY_NODE_DROP_XNODE_JOB_STMT:
+      code = translateDropXnodeJob(pCxt, (SDropXnodeJobStmt*)pNode);
+      break;
     default:
       break;
   }
@@ -21793,6 +22025,10 @@ static int32_t rewriteQuery(STranslateContext* pCxt, SQuery* pQuery) {
     case QUERY_NODE_SHOW_QNODES_STMT:
     case QUERY_NODE_SHOW_ANODES_STMT:
     case QUERY_NODE_SHOW_ANODES_FULL_STMT:
+    case QUERY_NODE_SHOW_XNODES_STMT:
+    case QUERY_NODE_SHOW_XNODE_TASKS_STMT:
+    case QUERY_NODE_SHOW_XNODE_AGENTS_STMT:
+    case QUERY_NODE_SHOW_XNODE_JOBS_STMT:
     case QUERY_NODE_SHOW_FUNCTIONS_STMT:
     case QUERY_NODE_SHOW_INDEXES_STMT:
     case QUERY_NODE_SHOW_BACKUP_NODES_STMT:
