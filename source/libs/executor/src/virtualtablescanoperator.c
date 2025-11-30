@@ -31,6 +31,7 @@ typedef struct SVirtualTableScanInfo {
   SSDataBlock*   pInputBlock;
   SSHashObj*     dataSlotMap;
   int32_t        tsSlotId;
+  int32_t        orgTsSlotId; // ts slot id of block from origin table, only used for virtual super table to make TS merge key
   int32_t        tagBlockId;
   int32_t        tagDownStreamId;
   bool           scanAllCols;
@@ -201,7 +202,7 @@ int32_t createSortHandleFromParam(SOperatorInfo* pOperator) {
   int32_t                         scanOpIndex = 0;
 
   cleanUpVirtualScanInfo(pVirtualScanInfo);
-  VTS_ERR_JRET(makeTSMergeKey(&pMergeKeys, pVirtualScanInfo->tsSlotId));
+  VTS_ERR_JRET(makeTSMergeKey(&pMergeKeys, pVirtualScanInfo->orgTsSlotId));
   pVirtualScanInfo->pSortInfo = createSortInfo(pMergeKeys);
   TSDB_CHECK_NULL(pVirtualScanInfo->pSortInfo, code, lino, _return, terrno)
   nodesDestroyList(pMergeKeys);
@@ -403,6 +404,9 @@ static int32_t doGetVtableMergedBlockData(SVirtualScanMergeOperatorInfo* pInfo, 
           }
           continue;
         }
+        if (tsortIsNullVal(pTupleHandle, i)) {
+          continue;
+        }
         int32_t slotKey = blockId << 16 | i;
         void*   slotId = tSimpleHashGet(pInfo->virtualScanInfo.dataSlotMap, &slotKey, sizeof(slotKey));
         if (slotId == NULL) {
@@ -533,7 +537,7 @@ int32_t doVirtualTableMerge(SOperatorInfo* pOperator, SSDataBlock** pResBlock) {
   }
 
   VTS_ERR_RET(copyDataBlock(pDataBlock, p));
-  qDebug("%s get sorted block, groupId:0x%" PRIx64 " rows:%" PRId64 , GET_TASKID(pTaskInfo), pDataBlock->info.id.groupId,
+  qDebug("%s %s get sorted block, groupId:0x%" PRIx64 " rows:%" PRId64 , GET_TASKID(pTaskInfo), __func__, pDataBlock->info.id.groupId,
          pDataBlock->info.rows);
 
   *pResBlock = (pDataBlock->info.rows > 0) ? pDataBlock : NULL;
@@ -720,7 +724,7 @@ void destroyVirtualTableScanOperatorInfo(void* param) {
   taosMemoryFreeClear(param);
 }
 
-int32_t extractColMap(SNodeList* pNodeList, SSHashObj** pSlotMap, int32_t *tsSlotId, int32_t *tagBlockId) {
+int32_t extractColMap(SNodeList* pNodeList, SSHashObj** pSlotMap, int32_t *tsSlotId, int32_t *orgTsSlotId, int32_t *tagBlockId) {
   size_t  numOfCols = LIST_LENGTH(pNodeList);
   int32_t code = TSDB_CODE_SUCCESS;
   int32_t lino = 0;
@@ -730,6 +734,7 @@ int32_t extractColMap(SNodeList* pNodeList, SSHashObj** pSlotMap, int32_t *tsSlo
   }
 
   *tsSlotId = -1;
+  *orgTsSlotId = numOfCols;
   *tagBlockId = -1;
   *pSlotMap = tSimpleHashInit(numOfCols, taosGetDefaultHashFunction(TSDB_DATA_TYPE_INT));
   TSDB_CHECK_NULL(*pSlotMap, code, lino, _return, terrno);
@@ -738,8 +743,9 @@ int32_t extractColMap(SNodeList* pNodeList, SSHashObj** pSlotMap, int32_t *tsSlo
     SColumnNode* pColNode = (SColumnNode*)nodesListGetNode(pNodeList, i);
     TSDB_CHECK_NULL(pColNode, code, lino, _return, terrno)
 
-    if (pColNode->isPrimTs) {
+    if (pColNode->isPrimTs || pColNode->colId == PRIMARYKEY_TIMESTAMP_COL_ID) {
       *tsSlotId = i;
+      *orgTsSlotId = i;
     } else if (pColNode->hasRef) {
       int32_t slotKey = pColNode->dataBlockId << 16 | pColNode->slotId;
       VTS_ERR_JRET(tSimpleHashPut(*pSlotMap, &slotKey, sizeof(slotKey), &i, sizeof(i)));
@@ -859,7 +865,7 @@ int32_t createVirtualTableMergeOperatorInfo(SOperatorInfo** pDownstream, int32_t
   pVirtualScanInfo->sortBufSize =
       pVirtualScanInfo->bufPageSize * (numOfDownstream + 1);  // one additional is reserved for merged result.
   VTS_ERR_JRET(
-      extractColMap(pVirtualScanPhyNode->pTargets, &pVirtualScanInfo->dataSlotMap, &pVirtualScanInfo->tsSlotId, &pVirtualScanInfo->tagBlockId));
+      extractColMap(pVirtualScanPhyNode->pTargets, &pVirtualScanInfo->dataSlotMap, &pVirtualScanInfo->tsSlotId, &pVirtualScanInfo->orgTsSlotId, &pVirtualScanInfo->tagBlockId));
 
   pVirtualScanInfo->scanAllCols = pVirtualScanPhyNode->scanAllCols;
 
